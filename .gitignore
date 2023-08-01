@@ -1,0 +1,19 @@
+# .gitignore
+
+# Ignore node_modules directory
+flask_project/SeaM-main/src/binary_class/YourDir/
+flask_project/_pycache_/
+vue_project/node_modules/
+node_modules
+YourDir
+YourDir/
+data
+flask_project\GradSplitter_main\data\
+# Ignore logs
+*.log
+
+# Ignore the build directory
+dist/
+
+# Ignore .env files
+.env
