@@ -93,6 +93,8 @@ def run_model():
         except Exception as e:
             # if the model runs fails, return the error
             return {'logs': str(e), 'isModelReady': False}, 500
+    elif algorithm=='GradSplitter':
+        return
 
 if __name__ == '__main__':
     socketio.run(debug=True)
