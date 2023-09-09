@@ -9,10 +9,11 @@
     <div v-if="activeTab === 'modularization'" class="form">
       <h2>Modularization</h2>
       <div class="row">
-        <div class="column">
+        <!-- This column is in left side for Drop-down menu -->
+        <div class="column column-select">
           <div class="input-group">
-            <label for="algorithm">Algorithm Selection</label>
-            <select id="algorithm" v-model="algorithm">
+            <label for="algorithm" class="input-label">Select Algorithm</label>
+            <select id="algorithm" v-model="algorithm" class="input-select">
               <option disabled value="">Please select an algorithm</option>
               <option>SEAM</option>
               <option>GradSplitter</option>
@@ -20,16 +21,16 @@
             </select>
           </div>
           <div class="input-group" v-if="algorithm === 'SEAM'">
-            <label for="direct-model-reuse">Direct Model Reuse</label>
-            <select id="direct-model-reuse" v-model="directModelReuse">
+            <label for="direct-model-reuse" class="input-label">Direct Model Reuse</label>
+            <select id="direct-model-reuse" v-model="directModelReuse" class="input-select">
               <option disabled value="">Please select a mode</option>
               <option>Binary Classification</option>
               <option>Multi-Class Classification</option>
             </select>
           </div>
           <div class="input-group" v-if="directModelReuse === 'Multi-Class Classification'">
-            <label for="target-superclass-idx">Target Superclass Idx</label>
-            <select id="target-superclass-idx" v-model="targetSuperclassIdx">
+            <label for="target-superclass-idx" class="input-label">Target Superclass Idx</label>
+            <select id="target-superclass-idx" v-model="targetSuperclassIdx" class="input-select">
               <option disabled value="">Please select a target superclass index</option>
               <option>0</option>
               <option>1</option>
@@ -39,20 +40,19 @@
             </select>
           </div>
           <div v-if="directModelReuse === 'Binary Classification'" class="input-group">
-            <label for="target-class">Target Class</label>
-            <select id="target-class" v-model="targetClass">
+            <label for="target-class" class="input-label">Target Class</label>
+            <select id="target-class" v-model="targetClass" class="input-select">
               <option disabled value="">Please select a target class</option>
               <option>0</option>
               <option>1</option>
             </select>
           </div>
-
-        </div>
           <div class="input-group">
-            <label for="model-file">Model File</label>
-            <div>
+            <label for="model-file" class="input-label">Model File</label>
+            <div class="input-with-button">
               <button @click="modelFileUploadMode = modelFileUploadMode === '0' ? '1' : '0'">
-                  {{ modelFileUploadMode === '0' ? 'Switch to select from list' : 'Switch to upload file' }}
+                Switch
+                <!-- {{ modelFileUploadMode === '0' ? 'Switch to select from list' : 'Switch to upload file' }} -->
               </button>
               <input v-if="modelFileUploadMode === '0'" id="model-file" type="file" @change="onModelFileChange" />
               <select v-else id="model-file" v-model="modelFile">
@@ -62,10 +62,11 @@
             </div>
           </div>
           <div class="input-group" v-if="modelFile">
-            <label for="dataset-file">Dataset File</label>
-              <div>
+            <label for="dataset-file" class="input-label">Dataset File</label>
+              <div class="input-with-button">
               <button @click="datasetFileUploadMode = datasetFileUploadMode === '0' ? '1' : '0'">
-                  {{ datasetFileUploadMode === '0' ? 'Switch to select from list' : 'Switch to upload file' }}
+                  Switch
+                <!-- {{ datasetFileUploadMode === '0' ? 'Switch to select from list' : 'Switch to upload file' }} -->
               </button>
               <input v-if="datasetFileUploadMode === '0'" id="dataset-file" type="file" @change="onDatasetFileChange" />
               <select v-else id="dataset-file" v-model="datasetFile">
@@ -75,19 +76,21 @@
             </div>
           </div>
 
-        <div class="column">
+        </div>
+        <!-- This column is in right side for inputs -->
+        <div class="column column-input">
           <div v-if="algorithm !== 'SEAM'" class="input-group">
-              <label for="epoch">Epoch</label>
+              <label for="epoch" class="input-label">Epoch</label>
               <input id="epoch" type="number" v-model="epoch" step="1" placeholder="Enter epoch" min="1" />
-              <div v-if="!isEpochValid" class="error-message">Epoch must be an integer greater than 0.</div>
+              <div v-if="!isEpochValid" class="error-message">Integer.</div>
           </div>
           <div class="input-group">
-              <label for="learning-rate">{{ algorithm === 'SEAM' ? 'Learning Rate Mask' : 'Learning Rate' }}</label>
+              <label for="learning-rate" class="input-label">{{ algorithm === 'SEAM' ? 'Learning Rate Mask' : 'Learning Rate' }}</label>
               <input id="learning-rate" type="number" v-model="learningRate" step="0.001" placeholder="Enter learning rate" min="0.001" />
-              <div v-if="!isLearningRateValid" class="error-message">Learning rate must be non-negative.</div>
+              <div v-if="!isLearningRateValid" class="error-message">Non-negative.</div>
           </div>
           <div class="input-group" v-if="algorithm === 'SEAM'">
-            <label for="alpha">Alpha</label>
+            <label for="alpha" class="input-label">Alpha</label>
             <input id="alpha" type="number" v-model="alpha" step="0.01" placeholder="Enter alpha" min="0" />
             <div v-if="!isAlphaValid" class="error-message">Alpha must be non-negative.</div>
           </div>
@@ -234,12 +237,12 @@ export default {
       }
 
       if (!this.isEpochValid) {
-        window.alert('Epoch must be an integer greater than 0.');
+        window.alert('Integer');
         return;
       }
 
       if (!this.isLearningRateValid) {
-        window.alert('Learning rate must be non-negative.');
+        window.alert('Non-negative.');
         return;
       }
 
@@ -288,11 +291,11 @@ export default {
 };
 </script>
 
-<style scoped>
+<style>
 .container {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 1em;
+  padding: 2em;
   font-family: Arial, sans-serif;
 }
 .tabs {
@@ -320,15 +323,52 @@ export default {
 .row {
   display: flex;
   margin-bottom: 1em;
+  /* 靠右 */
+  justify-content: flex-end; 
 }
 .column {
   display: flex;
   flex-direction: column;
   margin-right: 2em;
 }
-.input-group {
-  margin-bottom: 1em;
+.column-select, .column-input {
+  flex: 1;  /* 让两列各自占用可用空间的一半 */
 }
+
+.column-select {
+  flex: none; /* 移除 flex: 1; */
+  width: 45%; /* 固定宽度 */
+}
+
+.column-input {
+  flex: none; /* 移除 flex: 1; */
+  width: 45%; /* 固定宽度 */
+}
+
+.input-with-button {
+  display: flex;
+  align-items: center; /* 垂直居中对齐 */
+}
+
+.input-with-button button {
+  flex-shrink: 0; /* 防止按钮缩小 */
+  margin-right: 10px; /* 右边距 */
+}
+
+.input-with-button input[type="file"],
+.input-with-button select {
+  flex-grow: 1;  /* 允许输入框增长 */
+  min-width: 0;  /* 设置一个最小宽度 */
+}
+
+.input-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1em;
+  width: 100%;  /* Or set a fixed width */
+}
+
 .input-group > label {
   font-weight: bold;
   margin-bottom: .5em;
