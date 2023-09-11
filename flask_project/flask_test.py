@@ -16,6 +16,7 @@ if __name__ == "__main__":
     # run_model_reengineering(model="resnet20", dataset="cifar100", 
     #                             target_superclass_idx=0,lr_mask=0.1, 
     #                             alpha=2)
+    
     run_calculate_flop_mc(model="resnet20", dataset="cifar100", 
                    target_superclass_idx=0, lr_mask=0.1, alpha=2.0)
 

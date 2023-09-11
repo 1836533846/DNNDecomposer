@@ -120,7 +120,7 @@ def main_func(args, num_workers, pin_memory,config):
 
     print(f'\nPretrained Model Test Acc: {acc_pre_model:.2%}\n\n')
 
-def run_model_reengineering(model, dataset, target_class, lr_mask, alpha, 
+def run_model_reengineering_bc(model, dataset, target_class, lr_mask, alpha, 
                             shots= -1, seed=0, n_epochs=300, lr_head=0.1, 
                             early_stop=-1, tuning_param=False):
     print(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))

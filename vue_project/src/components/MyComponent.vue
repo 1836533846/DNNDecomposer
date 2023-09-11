@@ -154,9 +154,9 @@ export default {
       modelFileUploadMode: '1',  // The upload mode for the model file (0: file upload, 1: select from list)
       datasetFileUploadMode: '1',  // The upload mode for the dataset file (0: file upload, 1: select from list)
       directModelReuse: '', //To save the choose of Direct model reuse
-      targetClass: '',  // The target class selected by the user
+      targetClass: '-1',  // The target class selected by the user
       alpha: '1',  // The alpha value entered by the user, default to 1
-      targetSuperclassIdx: '',  // The target superclass index selected by the user
+      targetSuperclassIdx: '-1',  // The target superclass index selected by the user
 
       message: '',
       modelStatus: '',
@@ -264,6 +264,7 @@ export default {
         directModelReuse: this.directModelReuse,
         targetClass: this.targetClass,
         alpha: this.alpha,
+        targetSuperclassIdx: this.targetSuperclassIdx,
       };
 
       // Send POST requests to Flask
@@ -280,14 +281,26 @@ export default {
         });
 
     },
-    download() {
-        // Download方法
-        // Here put the code to download the processed model
-        // You may need to use Axios or other HTTP libraries to interact with the back-end server
-      },
-      
+      download() {
+      axios({
+        method: 'GET',
+        url: 'http://localhost:5000/download',  // Flask后端下载路由
+        responseType: 'blob'  // 表明返回类型是 Blob
+      })
+      .then(response => {
+        // 创建一个不可见的 'a' 标签用于下载
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'lr_head_mask_0.1_0.01_alpha_1.0.pth');  // 你的文件名
+        document.body.appendChild(link);
+        link.click();
+      })
+      .catch(err => {
+        console.log(err);
+      });
+    },  
   },
-
 };
 </script>
 

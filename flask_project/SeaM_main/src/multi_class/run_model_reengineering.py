@@ -161,7 +161,7 @@ def main_func(args,num_workers,pin_memory,config):
     print(f'Pretrained Model Test Acc: {acc_pre_model:.2%}\n\n')
 
 
-def run_model_reengineering(model, dataset, superclass_type='predefined', 
+def run_model_reengineering_mc(model, dataset, superclass_type='predefined', 
                             target_superclass_idx=-1, n_classes=-1, shots= -1, 
                             seed=0, n_epochs=300, lr_head=0.1, lr_mask=0.1, 
                             alpha=1, early_stop=-1):

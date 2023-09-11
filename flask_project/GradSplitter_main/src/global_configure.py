@@ -1,7 +1,12 @@
+import os
+# The absolute route of app.py
+# Which is "D:\ToolDemo_GS\flask_project" in my PC
+BASE_DIR = os.path.dirname(os.path.abspath("app.py"))
+
 class GlobalConfigures:
     def __init__(self):
         import os
-        root_dir = f'D:/ToolDemo_GS/flask_project/GradSplitter_main'  # modify the dir
+        root_dir = f'{BASE_DIR}/GradSplitter_main'  # modify the dir
         assert os.path.exists(root_dir)
 
         if os.path.exists(f'{root_dir}/data'):

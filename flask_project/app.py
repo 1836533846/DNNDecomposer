@@ -1,9 +1,12 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO,emit
-from SeaM_main.src.binary_class.run_model_reengineering import run_model_reengineering
+from SeaM_main.src.binary_class.run_model_reengineering import run_model_reengineering_bc
+from SeaM_main.src.multi_class.run_model_reengineering import run_model_reengineering_mc
 from SeaM_main.src.binary_class.run_calculate_flop import run_calculate_flop_bc
 from SeaM_main.src.multi_class.run_calculate_flop import run_calculate_flop_mc
+# Golbal config for SeaM
+from SeaM_main.src.global_config import global_config as global_config_SeaM
 
 import threading
 
@@ -14,9 +17,37 @@ CORS(app, origins='*')
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+
+
 # @app.route('/')
 # def index():
 #     return "Hello, World!"
+
+# Given name of algorithm, find the directory of it
+# ================后面想办法把路径抽象出来======================
+def dir_convert(algorithm, direct_model_reuse, model_file, dataset_file,
+                target_class_str, target_superclass_idx_str):
+    if algorithm == "SEAM":
+        algorithm_path = global_config_SeaM.data_dir
+        # algorithm_path = "flask_project/SeaM_main/data"
+        if direct_model_reuse == "Binary Classification":
+            model_reuse_path = f"/binary_classification/tc_{target_class_str}"
+        elif direct_model_reuse == "Multi-Class Classification":
+            model_reuse_path = f"/multi_class_classification/tsc_{target_superclass_idx_str}"
+
+    # elif algorithm == "GradSplitter":
+    #     algorithm_path = "flask_project/GradSplitter_main/data/"
+        
+        return f"{algorithm_path}{model_reuse_path}{model_file}_{dataset_file}"
+
+# 下载模块
+@app.route('/download')
+def download_file():
+    directory = 'D:/ToolDemo_GS/flask_project/SeaM_main/data/binary_classification/vgg16_cifar10/tc_0/'
+    # directory = "/path/to/folder"
+    filename = "lr_head_mask_0.1_0.01_alpha_1.0.pth"
+    return send_from_directory(directory, filename, as_attachment=True)
+
 
 @socketio.on('my event')
 def handle_my_custom_event(json):
@@ -28,6 +59,7 @@ def handle_my_custom_event(json):
 # def get_args(model, dataset, superclass_type='predefined', target_superclass_idx=-1, 
 #              n_classes=-1, shots= -1, seed=0, n_epochs=300, lr_head=0.1, lr_mask=0.1, 
 #              alpha=1, early_stop=-1):
+
 def run_model():
     # Get data from requests
     data = request.get_json()
@@ -38,6 +70,7 @@ def run_model():
     learning_rate = data.get('learningRate')
     direct_model_reuse = data.get('directModelReuse')
     target_class_str = data.get('targetClass')
+    # if data.get('targetClass') is not '-1' else data.get('targetSuperclassIdx')
     if target_class_str is None or target_class_str.strip() == '':
         target_class = 0  # Default value
     else:
@@ -69,7 +102,7 @@ def run_model():
                 # socketio.emit('model_result', {'status': 'error', 'error': error})
             def run():
                 if direct_model_reuse=='Binary Classification':
-                    # run_model_reengineering(model=model_file, dataset=dataset_file, 
+                    # run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
                     #                 target_class=target_class,
                     #                 lr_mask=learning_rate, alpha=alpha)
                     socketio.emit('message','\nModel is ready, waiting for calculating flops......')
