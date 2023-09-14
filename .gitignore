@@ -8,10 +8,11 @@ node_modules
 YourDir
 YourDir/
 data
+_pycache_
 flask_project\GradSplitter_main\data\
 # Ignore logs
 *.log
-*.oonx
+*.onnx
 
 # Ignore the build directory
 dist/
