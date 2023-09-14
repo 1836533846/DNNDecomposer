@@ -13,7 +13,6 @@ from binary_class.models.vgg import cifar10_vgg16_bn as cifar10_vgg16
 from binary_class.models.vgg import cifar100_vgg16_bn as cifar100_vgg16
 from binary_class.models.resnet import cifar10_resnet20, cifar100_resnet20
 
-
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, choices=['vgg16', 'resnet20'], required=True)

@@ -249,8 +249,8 @@ def run_calculate_flop_bc(model, dataset, target_class, lr_mask, alpha, callback
     print(f'FLOPs Sparse: {m_total_flop_sparse:.2f}M')
     print(f'FLOP% (Sparse / Dense): {perc_sparse_dense:.2%}')
     print(f'Reengineered Model   ACC: {acc_reeng:.2%}\n')
-    
-    callback(m_total_flop_dense, m_total_flop_sparse, \
+    if callback!="debug":
+        callback(m_total_flop_dense, m_total_flop_sparse, \
              perc_sparse_dense, acc_reeng, acc_pre)
     
     return m_total_flop_dense, m_total_flop_sparse, \

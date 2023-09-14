@@ -280,6 +280,12 @@ export default {
           this.logs = 'An error occurred while running the model.';
         });
 
+        // axios.get('http://localhost:5000/download', {
+        //   params: {
+        //     directory: 'some/directory',
+        //     filename: 'somefile.txt'
+        //   }
+        // })
     },
       download() {
       axios({
