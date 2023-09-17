@@ -1,13 +1,13 @@
 import torch.utils.data as data
 import torchvision.transforms as transforms
 import sys
-sys.path.append('..')
-from defect_inherit.dataset.cub200 import CUB200Data
-from defect_inherit.dataset.stanford_dog import SDog120Data
-from defect_inherit.dataset.flower102 import Flower102Data
-from defect_inherit.dataset.mit67 import MIT67Data
-from defect_inherit.dataset.stanford_40 import Stanford40Data
-from defect_inherit.config import load_config
+# sys.path.append('../..')
+from SeaM_main.src.defect_inherit.dataset.cub200 import CUB200Data
+from SeaM_main.src.defect_inherit.dataset.stanford_dog import SDog120Data
+from SeaM_main.src.defect_inherit.dataset.flower102 import Flower102Data
+from SeaM_main.src.defect_inherit.dataset.mit67 import MIT67Data
+from SeaM_main.src.defect_inherit.dataset.stanford_40 import Stanford40Data
+from SeaM_main.src.defect_inherit.config import load_config
 
 
 def load_dataset(dataset_name, is_train, shots=-1):

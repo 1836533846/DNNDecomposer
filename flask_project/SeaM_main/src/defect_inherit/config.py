@@ -1,6 +1,10 @@
 import sys
-sys.path.append('..')
-from global_config import GlobalConfig
+import os
+
+# print(sys.path)
+
+# sys.path.append('..')
+from SeaM_main.src.global_config import GlobalConfig
 
 
 def load_config():
