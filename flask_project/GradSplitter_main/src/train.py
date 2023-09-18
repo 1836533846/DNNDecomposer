@@ -7,6 +7,8 @@ import os
 from tqdm import tqdm
 # sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # print(sys.path)
+# sys.path.append('../..')
+
 from GradSplitter_main.src.utils.checker import check_dir
 from GradSplitter_main.src.utils.configure_loader import load_configure
 from GradSplitter_main.src.utils.dataset_loader import get_dataset_loader

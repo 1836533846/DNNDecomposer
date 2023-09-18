@@ -8,6 +8,7 @@ from SeaM_main.src.defect_inherit.run_reengineering_finetune import run_reengine
 from SeaM_main.src.defect_inherit.run_eval_robustness import run_eval_robustness
 from SeaM_main.src.defect_inherit.run_standard_finetune import run_standard_finetune
 import os
+from GradSplitter_main.src.train import run_train
 
 # run_calculate_flop测试ok，但是
 # No such file or directory: 
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     #                            lr_mask=0.05, alpha=0.5, prune_threshold=0.6)
 
     # run_eval_robustness(model="resnet18", dataset="mit67", eval_method="seam", lr_mask=0.05, alpha=0.5, prune_threshold=0.6)
-    run_standard_finetune(model="resnet18", dataset="mit67")
+    # run_standard_finetune(model="resnet18", dataset="mit67")
     # run_calculate_time_cost_bc(model=model_file, dataset=dataset_file, 
     #                            target_class=target_class, lr_mask=learning_rate, alpha=alpha)
 
@@ -47,3 +48,8 @@ if __name__ == "__main__":
 
     # run_calculate_flop(model="vgg16", dataset="cifar10", 
     #                target_class=0, lr_mask=0.01, alpha=1.0)
+    
+    model = 'simcnn'
+    dataset = 'cifar10'
+    execute = 'train_estimator'
+    run_train(model,dataset,execute,estimator_idx = 1)

@@ -14,6 +14,7 @@ estimator_indices = [1, 3, 4, 6, 8, 10, 11, 14, 15, 16]
 #     print(cmd)
 #     os.system(cmd)
 ##################################################################
+
 model = 'simcnn'
 dataset = 'cifar10'
 for i, estimator_idx in enumerate(estimator_indices):

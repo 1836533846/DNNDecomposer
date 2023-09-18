@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.append("D:/ToolDemo_GS/flask_project")
+# sys.path.append("D:/ToolDemo_GS/flask_project")
 from GradSplitter_main.src.utils.configure_loader import load_configure
 
 # After modularization, select the modules.

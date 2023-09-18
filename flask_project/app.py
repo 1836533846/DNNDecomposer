@@ -11,7 +11,7 @@ from SeaM_main.src.global_config import global_config as global_config_SeaM
 import threading
 
 app = Flask(__name__)
-CORS(app, origins='*')
+CORS(app)
 
 # create a SocketIO instance
 app.config['SECRET_KEY'] = 'secret!'
@@ -42,6 +42,7 @@ def dir_convert(algorithm, direct_model_reuse, model_file, dataset_file,
 
 # 下载模块
 @app.route('/download')
+# 需要一个传参
 def download_file():
     directory = 'D:/ToolDemo_GS/flask_project/SeaM_main/data/binary_classification/vgg16_cifar10/tc_0/'
     # directory = "/path/to/folder"
@@ -130,4 +131,4 @@ def run_model():
         return
 
 if __name__ == '__main__':
-    socketio.run(debug=True)
+    socketio.run(app, debug=True)
