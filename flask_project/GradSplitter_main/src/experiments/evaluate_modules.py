@@ -53,7 +53,7 @@ def run_evaluate_modules(model,dataset,estimator_idx):
     # args = args.parse_args()
     print(args)
     main_func(args)
-    return
+    # return
 
 # if __name__ == '__main__':
     # parser = argparse.ArgumentParser()

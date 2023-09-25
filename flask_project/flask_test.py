@@ -7,6 +7,7 @@ from SeaM_main.src.binary_class.run_model_reengineering import run_model_reengin
 from SeaM_main.src.defect_inherit.run_reengineering_finetune import run_reengineering_finetune
 from SeaM_main.src.defect_inherit.run_eval_robustness import run_eval_robustness
 from SeaM_main.src.defect_inherit.run_standard_finetune import run_standard_finetune
+from GradSplitter_main.src.script.run_train import run_train_script
 import os
 from GradSplitter_main.src.train import run_train
 
@@ -48,16 +49,16 @@ if __name__ == "__main__":
 
     # run_calculate_flop(model="vgg16", dataset="cifar10", 
     #                target_class=0, lr_mask=0.01, alpha=1.0)
-    model_file="resnet20"
-    dataset_file="cifar100"
-    target_superclass_idx=0
-    learning_rate=0.01
-    alpha=1.0
-    run_model_reengineering_mc(model=model_file, dataset=dataset_file, 
-                            target_superclass_idx=target_superclass_idx,
-                            lr_mask=learning_rate, alpha=alpha)
+    # model_file="resnet20"
+    # dataset_file="cifar100"
+    # target_superclass_idx=0
+    # learning_rate=0.01
+    # alpha=1.0
+    # run_model_reengineering_mc(model=model_file, dataset=dataset_file, 
+    #                         target_superclass_idx=target_superclass_idx,
+    #                         lr_mask=learning_rate, alpha=alpha)
     
-    # model = 'simcnn'
-    # dataset = 'cifar10'
-    # execute = 'train_estimator'
-    # run_train(model,dataset,execute,estimator_idx = 1)
+    model = 'simcnn'
+    dataset = 'cifar10'
+    execute = 'train_estimator'
+    run_train_script(model,dataset,execute)

@@ -13,6 +13,11 @@ from SeaM_main.src.defect_inherit.run_standard_finetune import run_standard_fine
 # Golbal config for SeaM
 from SeaM_main.src.global_config import global_config as global_config_SeaM
 
+from GradSplitter_main.src.script.run_train import run_train_script
+from GradSplitter_main.src.script.run_splitter import run_splitter_script
+from GradSplitter_main.src.script.select_modules import run_select_modules_script
+from GradSplitter_main.src.script.run_evaluate_modules import run_evaluate_modules_script
+
 import threading
 
 app = Flask(__name__)
@@ -21,7 +26,6 @@ CORS(app)
 # create a SocketIO instance
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
-
 
 
 # @app.route('/')
@@ -112,6 +116,7 @@ def run_model():
                     # target_class=0
                     # learning_rate=0.01
                     # alpha=1.0
+                    socketio.emit('message','\nReengineering Model, Please Wait!!!')
                     run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
                                     target_class=target_class,lr_mask=learning_rate, alpha=alpha)
                     socketio.emit('message','\nModel is ready, waiting for calculating flops......')
@@ -119,7 +124,8 @@ def run_model():
                                 target_class=target_class, lr_mask=learning_rate, alpha=alpha,
                                 callback=callback)
                     
-                elif direct_model_reuse=='Multi-Class Classification':    
+                elif direct_model_reuse=='Multi-Class Classification':
+                    socketio.emit('message','\nReengineering Model, Please Wait!!!')    
                     run_model_reengineering_mc(model=model_file, dataset=dataset_file, 
                                 target_superclass_idx=target_superclass_idx,
                                 lr_mask=learning_rate, alpha=alpha, callback=callback)
@@ -127,7 +133,6 @@ def run_model():
                     run_calculate_flop_mc(model=model_file, dataset=dataset_file, 
                                 target_superclass_idx=target_superclass_idx, 
                                 lr_mask=learning_rate, alpha=alpha,callback=callback)
-                    # Indirect model reuse部分该怎么用？？
                 elif direct_model_reuse == 'Defect Inheritance':
                     # 1.Re-engineer ResNet18-ImageNet and then fine-tune 
                     # the re-engineered model on the target dataset Scenes.
@@ -140,12 +145,12 @@ def run_model():
                     # 
                     # 4. Compute the defect inheritance rate of fine-tuned 
                     # original ResNet18-Scenes.
-                    run_reengineering_finetune(model="resnet18", dataset="mit67",
+                    run_reengineering_finetune(model=model_file, dataset=model_file,
                            lr_mask=0.05, alpha=0.5, prune_threshold=0.6)
-                    run_eval_robustness(model="resnet18", dataset="mit67", 
+                    run_eval_robustness(model=model_file, dataset=model_file, 
                             eval_method="seam", lr_mask=0.05, alpha=0.5, prune_threshold=0.6)
-                    run_standard_finetune(model="resnet18", dataset="mit67")
-                    run_eval_robustness(model="resnet18", dataset="mit67", eval_method="standard")
+                    run_standard_finetune(model=model_file, dataset=model_file)
+                    run_eval_robustness(model=model_file, dataset=model_file, eval_method="standard")
                         
                 else:
                     print("Model reuse type error!!")
@@ -159,6 +164,30 @@ def run_model():
             # if the model runs fails, return the error
             return {'logs': str(e), 'isModelReady': False}, 500
     elif algorithm=='GradSplitter':
+        try:
+            def callback(m_total_flop_dense, m_total_flop_sparse, 
+                        perc_sparse_dense, acc_reeng, acc_pre):
+                socketio.emit('model_result', f'FLOPs Dense: {m_total_flop_dense:.2f}M')
+                socketio.emit('model_result', f'FLOPs Sparse: {m_total_flop_sparse:.2f}M')
+                socketio.emit('model_result', f'FLOPs % (Sparse / Dense): {perc_sparse_dense:.2%}')
+                socketio.emit('model_result', f'Pretrained Model ACC: {acc_pre:.2%}')
+                socketio.emit('model_result', f'Reengineered Model ACC: {acc_reeng:.2%}')
+                # socketio.emit('model_result', {'status': 'error', 'error': error})
+            def run():
+                socketio.emit('message','\nReengineering Model, Please Wait!!!')
+                run_splitter_script(model=model_file,dataset=dataset_file)
+                socketio.emit('message','\nReengineering Done!')
+                socketio.emit('message','\nSelecting Modules, Please Wait!!!')
+                run_select_modules_script(model=model_file,dataset=dataset_file)
+
+                return
+            # start a new thread to run the model
+            threading.Thread(target=run).start()
+            # if the model runs successfully, return the logs and model status
+            return {'logs': "Model run successfully", 'isModelReady': True}, 200
+        except Exception as e:
+            # if the model runs fails, return the error
+            return {'logs': str(e), 'isModelReady': False}, 500
         return
 
 if __name__ == '__main__':

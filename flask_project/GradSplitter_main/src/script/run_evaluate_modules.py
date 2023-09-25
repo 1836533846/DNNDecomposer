@@ -15,7 +15,9 @@ estimator_indices = [1, 3, 4, 6, 8, 10, 11, 14, 15, 16]
 #     os.system(cmd)
 ##################################################################
 
-model = 'simcnn'
-dataset = 'cifar10'
-for i, estimator_idx in enumerate(estimator_indices):
-      run_evaluate_modules(model,dataset,estimator_idx=estimator_idx)
+# model = 'simcnn'
+# dataset = 'cifar10'
+
+def run_evaluate_modules_script(model,dataset,estimator_indices=estimator_indices):
+      for i, estimator_idx in enumerate(estimator_indices):
+            run_evaluate_modules(model,dataset,estimator_idx=estimator_idx)
