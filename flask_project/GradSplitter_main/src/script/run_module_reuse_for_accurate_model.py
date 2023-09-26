@@ -1,12 +1,12 @@
 import os
 import sys
 # sys.path.append('..')
-sys.path.append("D:/ToolDemo_GS/flask_project")
+# sys.path.append("D:/ToolDemo_GS/flask_project")
 from GradSplitter_main.src.experiments.ensemble_modules import run_ensemble_modules
 
 # 1. intra-network reuse
 # CIFAR
-module_idx = '6,1,10,6,3,3,10,6,1,1'  # SimCNN
+module_idx = '6,1,10,6,3,3,10,6,1,1'  # SimCNN 模型的index，class0选择了来自6号模型的module
 # module_idx = '14,1,4,9,14,12,12,9,1,12'  # ResCNN
 # module_idx = '4,1,10,9,5,9,9,5,12,12'  # InceCNN
 
@@ -45,5 +45,6 @@ module_idx = '6,1,10,6,3,3,10,6,1,1'  # SimCNN
 #################################################################
 model = 'simcnn'
 dataset = 'cifar10'
-run_ensemble_modules(model,dataset,estimator_indices=module_idx)
+def run_ensemble_modules_script(model,dataset,estimator_indices=module_idx):
+    run_ensemble_modules(model=model,dataset=dataset,estimator_indices=estimator_indices)
 

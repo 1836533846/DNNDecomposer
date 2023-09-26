@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.append("D:/ToolDemo_GS/flask_project")
+# sys.path.append("D:/ToolDemo_GS/flask_project")
 from itertools import combinations
 from GradSplitter_main.src.experiments.reuse.reuse_modules import run_reuse_modules
 
@@ -21,8 +21,7 @@ from GradSplitter_main.src.experiments.reuse.reuse_modules import run_reuse_modu
 #                   f'--model {model} --class_cifar {class_cifar} --class_svhn {class_svhn}'
 #             print(cmd)
 #             os.system(cmd)
-
-if __name__ == '__main__':
+def run_reuse_modules_script():
     model = ['simcnn', 'rescnn', 'incecnn'][0]
     class_cifar_comb = list(combinations(list(range(10)), 1))
     class_svhn_comb = list(combinations(list(range(10)), 1))

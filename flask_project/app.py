@@ -17,6 +17,7 @@ from GradSplitter_main.src.script.run_train import run_train_script
 from GradSplitter_main.src.script.run_splitter import run_splitter_script
 from GradSplitter_main.src.script.select_modules import run_select_modules_script
 from GradSplitter_main.src.script.run_evaluate_modules import run_evaluate_modules_script
+from GradSplitter_main.src.script.run_module_reuse_for_accurate_model import run_ensemble_modules_script
 
 import threading
 
@@ -64,11 +65,17 @@ def handle_my_custom_event(json):
     emit('my response', json)
 
 @app.route('/run_model', methods=['POST'])
+@app.route('/benchmark', methods=['POST'])
 
 # def get_args(model, dataset, superclass_type='predefined', target_superclass_idx=-1, 
 #              n_classes=-1, shots= -1, seed=0, n_epochs=300, lr_head=0.1, lr_mask=0.1, 
 #              alpha=1, early_stop=-1):
-
+def benchmark():
+    data = request.get_json()
+    model_file = data.get('modelFile')
+    dataset_file = data.get('datasetFile')
+    algorithm = data.get('algorithm')
+    return
 def run_model():
     # Get data from requests
     data = request.get_json()
@@ -165,22 +172,24 @@ def run_model():
             return {'logs': str(e), 'isModelReady': False}, 500
     elif algorithm=='GradSplitter':
         try:
-            def callback(m_total_flop_dense, m_total_flop_sparse, 
-                        perc_sparse_dense, acc_reeng, acc_pre):
-                socketio.emit('model_result', f'FLOPs Dense: {m_total_flop_dense:.2f}M')
-                socketio.emit('model_result', f'FLOPs Sparse: {m_total_flop_sparse:.2f}M')
-                socketio.emit('model_result', f'FLOPs % (Sparse / Dense): {perc_sparse_dense:.2%}')
-                socketio.emit('model_result', f'Pretrained Model ACC: {acc_pre:.2%}')
-                socketio.emit('model_result', f'Reengineered Model ACC: {acc_reeng:.2%}')
-                # socketio.emit('model_result', {'status': 'error', 'error': error})
+            def callback(best_modules,best_epoch,best_acc,best_avg_kernel):
+                socketio.emit('model_result', f'Best Module: {best_modules}')
+                socketio.emit('model_result', f'Best_epoch: {best_epoch}')
+                socketio.emit('model_result', f'Best_acc: {best_acc * 100:.2f}%')
+                socketio.emit('model_result', f'Best_avg_kernel: {best_avg_kernel:.2f}')
             def run():
-                socketio.emit('message','\nReengineering Model, Please Wait!!!')
+                socketio.emit('message','\n Reengineering Model, Please Wait!!!')
                 run_splitter_script(model=model_file,dataset=dataset_file)
-                socketio.emit('message','\nReengineering Done!')
-                socketio.emit('message','\nSelecting Modules, Please Wait!!!')
+                socketio.emit('message','\n Reengineering Done!')
+                socketio.emit('message','\n Selecting Modules, Please Wait!!!')
                 run_select_modules_script(model=model_file,dataset=dataset_file)
+                socketio.emit('message','\n Modules Selected!!!')
+                socketio.emit('message','\n Evaluating Modules......')
+                run_evaluate_modules_script(model=model_file,dataset=dataset_file)
+                socketio.emit('message','\n Trying to ensemble a more accurate model......')
+                run_ensemble_modules_script(model=model_file,dataset=dataset_file)
+                socketio.emit('message','\n New accuate model ensembled!!!')
 
-                return
             # start a new thread to run the model
             threading.Thread(target=run).start()
             # if the model runs successfully, return the logs and model status

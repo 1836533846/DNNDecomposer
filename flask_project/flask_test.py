@@ -8,8 +8,11 @@ from SeaM_main.src.defect_inherit.run_reengineering_finetune import run_reengine
 from SeaM_main.src.defect_inherit.run_eval_robustness import run_eval_robustness
 from SeaM_main.src.defect_inherit.run_standard_finetune import run_standard_finetune
 from GradSplitter_main.src.script.run_train import run_train_script
+from GradSplitter_main.src.script.run_splitter import run_splitter_script
+from GradSplitter_main.src.script.run_module_reuse_for_accurate_model import run_ensemble_modules_script
 import os
 from GradSplitter_main.src.train import run_train
+from GradSplitter_main.src.grad_splitter import run_grad_splitter
 
 # run_calculate_flop测试ok，但是
 # No such file or directory: 
@@ -27,6 +30,16 @@ learning_rate=0.01
 alpha=1.0
 
 if __name__ == "__main__":
+    def callback(best_modules,best_epoch,best_acc,best_avg_kernel):
+        print(f'Best Module: {best_modules}')
+        print(f'best_epoch: {best_epoch}')
+        print(f'best_acc: {best_acc * 100:.2f}%')
+        print(f'best_avg_kernel: {best_avg_kernel:.2f}')
+    model = 'simcnn'
+    dataset = 'cifar10'
+    run_ensemble_modules_script(model,dataset)
+    # run_grad_splitter(model='simcnn',dataset='cifar10',estimator_idx=1,callback=callback)
+    # run_splitter_script(model='simcnn',dataset='cifar10')
     # run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
     #                             target_class=target_class,
     #                             lr_mask=learning_rate, alpha=alpha)
@@ -58,7 +71,7 @@ if __name__ == "__main__":
     #                         target_superclass_idx=target_superclass_idx,
     #                         lr_mask=learning_rate, alpha=alpha)
     
-    model = 'simcnn'
-    dataset = 'cifar10'
-    execute = 'train_estimator'
-    run_train_script(model,dataset,execute)
+    # model = 'simcnn'
+    # dataset = 'cifar10'
+    # execute = 'train_estimator'
+    # run_train_script(model,dataset,execute)
