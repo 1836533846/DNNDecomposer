@@ -1,6 +1,7 @@
-from flask import Flask, request, render_template, send_from_directory
+from flask import Flask, request, render_template, send_from_directory,session
 from flask_cors import CORS
 from flask_socketio import SocketIO,emit
+import os
 # from SeaM_main.src.binary_class.run_calculate_flop import run_calculate_flop
 from SeaM_main.src.multi_class.run_model_reengineering import run_model_reengineering_mc
 from SeaM_main.src.multi_class.run_calculate_flop import run_calculate_flop_mc
@@ -51,31 +52,58 @@ def dir_convert(algorithm, direct_model_reuse, model_file, dataset_file,
         return f"{algorithm_path}{model_reuse_path}{model_file}_{dataset_file}"
 
 # 下载模块
-@app.route('/download')
 # 需要一个传参
+@app.route('/download')
 def download_file():
-    directory = 'D:/ToolDemo_GS/flask_project/SeaM_main/data/binary_classification/vgg16_cifar10/tc_0/'
-    # directory = "/path/to/folder"
-    filename = "lr_head_mask_0.1_0.01_alpha_1.0.pth"
-    return send_from_directory(directory, filename, as_attachment=True)
+    try:
+        directory = '/data/bixh/ToolDemo_GS/SeaM_main/data/binary_classification/vgg16_cifar10/tc_0'
+        filename = "lr_head_mask_0.1_0.01_alpha_1.0.pth"
+        print(f"Attempting to send from directory: {directory}, filename: {filename}")  # Debug line
+        return send_from_directory(directory, filename, as_attachment=True)
+    except Exception as e:
+        print(f"An error occurred: {e}")  # Debug line
+        return str(e), 400
 
-@socketio.on('my event')
-def handle_my_custom_event(json):
-    print('received json: ' + str(json))
-    emit('my response', json)
 
-@app.route('/run_model', methods=['POST'])
+# @socketio.on('my event')
+# def handle_my_custom_event(json):
+#     print('received json: ' + str(json))
+#     emit('my response', json)
+
 @app.route('/benchmark', methods=['POST'])
-
-# def get_args(model, dataset, superclass_type='predefined', target_superclass_idx=-1, 
-#              n_classes=-1, shots= -1, seed=0, n_epochs=300, lr_head=0.1, lr_mask=0.1, 
-#              alpha=1, early_stop=-1):
 def benchmark():
     data = request.get_json()
+    print(data)
     model_file = data.get('modelFile')
     dataset_file = data.get('datasetFile')
-    algorithm = data.get('algorithm')
-    return
+    algorithm = 'SEAM'
+    learning_rate = 0.01
+    direct_model_reuse = 'Binary Classification'
+    target_class = 0
+    alpha = 1.00
+    if algorithm=="SEAM":
+        def callback(m_total_flop_dense, m_total_flop_sparse, 
+                    perc_sparse_dense, acc_reeng, acc_pre):
+            socketio.emit('model_result', f'FLOPs Dense: {m_total_flop_dense:.2f}M')
+            socketio.emit('model_result', f'FLOPs Sparse: {m_total_flop_sparse:.2f}M')
+            socketio.emit('model_result', f'FLOPs % (Sparse / Dense): {perc_sparse_dense:.2%}')
+            socketio.emit('model_result', f'Pretrained Model ACC: {acc_pre:.2%}')
+            socketio.emit('model_result', f'Reengineered Model ACC: {acc_reeng:.2%}')
+        def run():
+            socketio.emit('message','\nReengineering Model, Please Wait!!!')
+            run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
+                            target_class=target_class,lr_mask=learning_rate, alpha=alpha)
+            socketio.emit('message','\nModel is ready, waiting for calculating flops......')
+            run_calculate_flop_bc(model=model_file, dataset=dataset_file, 
+                        target_class=target_class, lr_mask=learning_rate, alpha=alpha,
+                        callback=callback)
+    return {'message': 'Benchmarking completed successfully'}, 200 
+
+
+
+
+
+@app.route('/run_model', methods=['POST'])
 def run_model():
     # Get data from requests
     data = request.get_json()
@@ -105,7 +133,13 @@ def run_model():
             print(f"Error: 'targetSuperclassIdx' value '{target_superclass_idx_str}' is not a valid integer")
             target_superclass_idx = 0  # Or some other default value in case of error
     alpha = float(data.get('alpha'))
-
+    session["model_file"]=model_file
+    session["dataset_file"]=dataset_file
+    session["algorithm"]=algorithm
+    session["learning_rate"]=learning_rate
+    session["direct_model_reuse"]=direct_model_reuse
+    session["target_class"]=target_class
+    session["alpha"]=alpha
     if algorithm=='SEAM':
         try:
             def callback(m_total_flop_dense, m_total_flop_sparse, 
@@ -124,12 +158,12 @@ def run_model():
                     # learning_rate=0.01
                     # alpha=1.0
                     socketio.emit('message','\nReengineering Model, Please Wait!!!')
-                    run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
-                                    target_class=target_class,lr_mask=learning_rate, alpha=alpha)
-                    socketio.emit('message','\nModel is ready, waiting for calculating flops......')
-                    run_calculate_flop_bc(model=model_file, dataset=dataset_file, 
-                                target_class=target_class, lr_mask=learning_rate, alpha=alpha,
-                                callback=callback)
+                    # run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
+                    #                 target_class=target_class,lr_mask=learning_rate, alpha=alpha)
+                    # socketio.emit('message','\nModel is ready, waiting for calculating flops......')
+                    # run_calculate_flop_bc(model=model_file, dataset=dataset_file, 
+                    #             target_class=target_class, lr_mask=learning_rate, alpha=alpha,
+                    #             callback=callback)
                     
                 elif direct_model_reuse=='Multi-Class Classification':
                     socketio.emit('message','\nReengineering Model, Please Wait!!!')    
