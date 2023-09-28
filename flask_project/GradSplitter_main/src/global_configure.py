@@ -2,6 +2,8 @@ import os
 # The absolute route of app.py
 # Which is "D:\ToolDemo_GS\flask_project" in my PC
 BASE_DIR = os.path.dirname(os.path.abspath("app.py"))
+# print(BASE_DIR)
+# BASE_DIR = f"{BASE_DIR}/flask_project"
 
 class GlobalConfigures:
     def __init__(self):
@@ -36,4 +38,6 @@ class GlobalConfigures:
         self.trained_model_path = f'{self.trained_model_dir}/estimator_{self.estimator_idx}.pth'
         self.module_save_dir = f'{self.workspace}/modules/estimator_{self.estimator_idx}'
         self.best_module_path = f'{self.module_save_dir}/estimator_{self.estimator_idx}.pth'
+
+global_config = GlobalConfigures()
 
