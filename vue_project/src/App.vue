@@ -9,7 +9,7 @@
 // import MyComponent from './components/MyComponent'
 
 export default {
-  name: 'App', title:"SEAMGrad Demo Tool"
+  name: 'App', title:"SeaMGrad Demo Tool"
 
 }
 </script>

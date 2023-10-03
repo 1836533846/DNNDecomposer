@@ -12,10 +12,10 @@ Vue.use(VueRouter)
 const router = new VueRouter({
     routes:[
         { path: '/', redirect:'/modularization' },
-        { path:'/modularization', component: Modularization, meta:{title: 'SEAMGrad Modularization'}},
-        { path:'/deployment', component: Deployment, meta:{title: 'SEAMGrad Deployment'}},
-        { path:'/benchmark', component: Benchmark , meta:{title: 'SEAMGrad Deployment'}},
-        { path:'/old', component: MyComponent , meta:{title: 'SEAMGrad Deployment'}},
+        { path:'/modularization', component: Modularization, meta:{title: 'SeaMGrad Modularization'}},
+        { path:'/deployment', component: Deployment, meta:{title: 'SeaMGrad Deployment'}},
+        { path:'/benchmark', component: Benchmark , meta:{title: 'SeaMGrad Deployment'}},
+        { path:'/old', component: MyComponent , meta:{title: 'SeaMGrad Deployment'}},
     ]
 })
 

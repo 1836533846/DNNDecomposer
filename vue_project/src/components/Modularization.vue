@@ -2,13 +2,14 @@
 
     <el-container>
         <el-header style="height: 85px;">
-        <span style="margin-top: 0;margin-left: 5%;"> SEAMGrad Tool Demo</span>
+        <span style="margin-top: 0;margin-left: 5%;"> SeaMGrad Tool Demo</span>
         </el-header>
         <el-main>
             <h2 style="text-align: left;margin-left: 15%;float: left;margin-top: 2%;margin-bottom: 3%;">
                 Model Modularization</h2>
-            <el-button style="float:right;margin-right: 24%;margin-top: 2%;font-size: larger;width:220px;margin-bottom: 10px;" type="success" @click="JumpToBenchmark">
-              Run Benchmark</el-button>
+            <el-button style="float:right;margin-right: 24%;margin-top: 2%;font-size: larger;width:220px;margin-bottom: 10px;" 
+            type="success" @click="JumpToBenchmark">
+              Benchmark</el-button>
 
             <div class="form-body" style="margin-left: 20%;margin-right: 10%;">
                 <el-form  label-width="220px" label-position="left" 
@@ -96,7 +97,7 @@
                     </el-form-item>
                 
 
-                    <!-- Model Selectionc-->
+                    <!-- Model Selection-->
                     <el-form-item label="Model File:" class="selectItem" style="width: 100%;">
                       <el-select v-model="modelFile"
                         :disabled="modelFileUploadMode === '0' || algorithm === ''" placeholder="Please select a model">
@@ -111,7 +112,7 @@
                       <el-select v-model="datasetFile"
                         :disabled="datasetFileUploadMode === '0'|| algorithm === ''" placeholder="Please select a dataset">
                           <el-option  v-for="item in datasetFileOptionsForMultiClass" 
-                            :key="item" :label="item" :value="item">
+                          :key="item.value" :label="item.label" :value="item.value">
                             </el-option>
                         </el-select>
                     </el-form-item>
@@ -120,12 +121,14 @@
 
                 <!-- Upload -->
                 <div style="width: 80%;margin-top: 40px;">
-                  <el-button style="width:220px;font-size: larger;margin-bottom: 10px;" type="primary" @click="runModularization">
+                  <el-button style="float:left;font-size: larger;margin-bottom: 10px;" type="success" @click="runModularization">
                   RUN</el-button>
-                  <el-button style="float: right;font-size: larger;margin-bottom: 10px;" type="warning" @click="download"> 
+                  <el-button style="float: left;font-size: larger;margin-bottom: 10px;" type="warning" @click="download"> 
                   Download Process Model</el-button>
                   <el-button style="float: right;font-size: larger;margin-bottom: 10px;" type="primary" @click="JumpToDeployment"> 
                   Module Deployment </el-button>
+                  <el-button v-if="algorithm==='GradSplitter'" style="float: right;font-size: larger;margin-bottom: 10px;" type="success" @click="openReuse"> 
+                  Module Reuse </el-button>
                 </div>
 
                 <!-- Result -->
@@ -141,6 +144,43 @@
 
                 </div>
         </el-main>
+
+
+        <el-dialog :visible.sync="REUSEdialogVisible" width="50%" >
+          <!-- HEADER -->
+          <span slot="title" class="header-title">
+            <h2 style="margin-left: 20px;">Module Reuse</h2>
+          </span>
+          <!-- BODY -->
+          <div class="reuseclass" style="font-family: Arial, sans-serif;color: #333;width:80%;margin-left: 10%;">
+            <el-form  label-width="180px" label-position="left" 
+                ref="reuseDialogForm" :model="reuseDialogForm" id="reuseDialogForm" :inline="true" >
+              <el-form-item label="Build Models:" class="selectItemMini">
+                <el-radio-group v-model="reuseWay" @change="ResetModelandDataset">
+                  <el-radio label="accurate">More Accurate</el-radio>
+                  <el-radio label="newtask" >For New Task</el-radio>
+                </el-radio-group>
+              </el-form-item>
+
+              <el-form-item v-if="reuseWay==='newtask'" label="Choose Modules:" class="selectItemMini">
+                <el-select v-model="cifarclass" placeholder="Modules from CIFAR-10">
+                  <el-option v-for="item in cifarclasses" :key="item.value" :label="item.label" :value="item.value"></el-option>
+                </el-select> 
+                <el-select v-model="svhnclass" placeholder="Modules from SVHN" style="margin-left: 20px;">
+                  <el-option v-for="item in svhnclasses" :key="item.value" :label="item.label" :value="item.value"></el-option>
+                </el-select>
+                <p style="color:darkgray">Build a binary-classification model by combination two modules. </p>
+              </el-form-item>
+
+
+            </el-form>
+          </div>
+          <!-- FOOTER -->
+          <span slot="footer" class="dialog-footer">
+            <el-button type="primary">Run Module Reuse</el-button>
+            <el-button type="warning" @click="REUSEdialogVisible = false">Close</el-button>
+          </span>
+        </el-dialog>
     </el-container>
  
 </template>
@@ -162,10 +202,31 @@ export default {
     this.logs += 'Message: ' + data + '\n';
   }
 },
+created(){
+  var modelFile = sessionStorage.getItem("modelFile");
+  var datasetFile = sessionStorage.getItem("datasetFile");
+  var algorithm = sessionStorage.getItem("algorithm");
+  var epoch = sessionStorage.getItem("epoch");
+  var learningRate = sessionStorage.getItem("learningRate");
+  var directModelReuse = sessionStorage.getItem("directModelReuse");
+  var targetClass = sessionStorage.getItem("targetClass");
+  var alpha = sessionStorage.getItem("alpha");
+  var targetSuperclassIdx = sessionStorage.getItem("targetSuperclassIdx");
+  
+  if(modelFile!="null"){this.modelFile = modelFile}
+  if(datasetFile!="null"){this.datasetFile = datasetFile}
+  if(algorithm!="null"){this.algorithm = algorithm}
+  this.epoch = epoch
+  this.learningRate = learningRate
+  this.directModelReuse = directModelReuse
+  this.targetClass = targetClass
+  this.alpha = alpha
+  this.targetSuperclassIdx = targetSuperclassIdx
+},
 data() {
     return {
-      form:{},
-
+      form:{},reuseDialogForm:{},
+      REUSEdialogVisible: false,
       activeTab: 'modularization',  // Currently active tab
       modelFile: null,  // The model file selected by the user
       datasetFile: null,  // The dataset file selected by the user
@@ -184,14 +245,26 @@ data() {
       message: '',
       modelStatus: '',
       modelResult: null,
-
+      
+      reuseWay:'', // in Model Reuse [=accurate/newtask]
+      cifarclass:'',
+      svhnclass:'',
 
       targetSuperclassIdxOptions:[
         {value:"0", label:"0"},{value:"1", label:"1"},{value:"2", label:"2"},{value:"3", label:"3"},{value:"4", label:"4"},
       ],
       targetClassIdxOptions:[
-        {value:"0", label:"0"},{value:"1", label:"1"}
-      ]
+        {value:"0", label:"0"},{value:"1", label:"1"},{value:"2", label:"2"},{value:"3", label:"3"},{value:"4", label:"4"},
+        {value:"5", label:"5"},{value:"6", label:"6"},{value:"7", label:"7"},{value:"8", label:"8"},{value:"9", label:"9"},
+      ],
+      cifarclasses:[
+        {value:"0", label:"0"},{value:"1", label:"1"},{value:"2", label:"2"},{value:"3", label:"3"},{value:"4", label:"4"},
+        {value:"5", label:"5"},{value:"6", label:"6"},{value:"7", label:"7"},{value:"8", label:"8"},{value:"9", label:"9"},
+      ],
+      svhnclasses:[
+        {value:"0", label:"0"},{value:"1", label:"1"},{value:"2", label:"2"},{value:"3", label:"3"},{value:"4", label:"4"},
+        {value:"5", label:"5"},{value:"6", label:"6"},{value:"7", label:"7"},{value:"8", label:"8"},{value:"9", label:"9"},
+      ],
     };
   },
 
@@ -217,14 +290,17 @@ data() {
     // To make sure models corresponds to their datasets
     datasetFileOptionsForMultiClass() {
       if (this.directModelReuse === 'Multi-Class Classification') {
-        if (this.modelFile === 'ResNet20') {
-          return ['cifar100'];
-        } else if (this.modelFile === 'ResNet50') {
-            return ['ImageNet'];
+        if (this.modelFile === 'resnet20') {
+          // return ['cifar100'];
+          return [{value:'cifar100', label:'CIFAR-100'}]
+        } else if (this.modelFile === 'resnet50') {
+            // return ['ImageNet'];
+            return [{value:'ImageNet', label:'ImageNet'}]
           }
         }
       else if (this.directModelReuse === 'Defect Inheritance'){
-        return ['mit67']
+        // return ['mit67']
+        return [{value:'mit67', label:'MIT67'}]
       }
       return this.datasetFileOptions;
     },
@@ -240,10 +316,13 @@ data() {
     // return this.algorithm === 'SEAM' ? ['vgg16', 'resnet20'] : ['simcnn', 'rescnn', 'incecnn'];
       return this.algorithm === 'SEAM' ? 
         [{value:'vgg16', label:'VGG16'}, {value:'resnet20', label:'ResNet20'}] 
-        : [{value:'simmcnn', label:'SimCNN'}, {value:'rescnn', label:'ResCNN'}, {value:'incecee', label:'InceCNN'}]
+        : [{value:'simcnn', label:'SimCNN'}, {value:'rescnn', label:'ResCNN'}, {value:'incecnn', label:'InceCNN'}]
     },
     datasetFileOptions() {
-      return this.algorithm === 'SEAM' ? ['cifar10', 'cifar100'] : ['cifar10', 'svhn'];
+      // return this.algorithm === 'SEAM' ? ['cifar10', 'cifar100'] : ['cifar10', 'svhn'];
+      return this.algorithm === 'SEAM' ? 
+      [{value:'cifar10', label:'CIFAR-10'}, {value:'cifar100', label:'CIFAR-100'}] : 
+      [{value:'cifar10', label:'CIFAR-10'}, {value:'svhn', label:'SVHN'}];
     },
     isAlphaValid() {
       return this.alpha >= 0;
@@ -253,6 +332,9 @@ data() {
   methods: {
     JumpToDeployment(){      this.$router.push('/deployment')    },
     JumpToBenchmark(){      this.$router.push('/benchmark')    },
+    openReuse(){
+      this.REUSEdialogVisible=true;
+    },
     ResetModelandDataset(){
       if(this.datasetFileUploadMode === '1' ){this.datasetFile = null;};
       if(this.modelFileUploadMode === '1'){this.modelFile = null}
@@ -304,16 +386,16 @@ data() {
         this.isModelReady = true;
 
         const data = {
-        modelFile: this.modelFile,
-        datasetFile: this.datasetFile,
-        algorithm: this.algorithm,
-        epoch: this.epoch,
-        learningRate: this.learningRate,
-        directModelReuse: this.directModelReuse,
-        targetClass: this.targetClass,
-        alpha: this.alpha,
-        targetSuperclassIdx: this.targetSuperclassIdx,
-      };
+          modelFile: this.modelFile,
+          datasetFile: this.datasetFile,
+          algorithm: this.algorithm,
+          epoch: this.epoch,
+          learningRate: this.learningRate,
+          directModelReuse: this.directModelReuse,
+          targetClass: this.targetClass,
+          alpha: this.alpha,
+          targetSuperclassIdx: this.targetSuperclassIdx,
+        };
 
       // Send POST requests to Flask
       axios.post('http://localhost:5000/run_model', data)
@@ -330,8 +412,7 @@ data() {
 
     },
     runModularization(){
-      this.$message('RUNNING...', {center:true, showConfirmButton:false})
-      this.checkRunInformation()
+      this.$message({message:'RUNNING...',  type: 'success'}, {center:true, showConfirmButton:false})
       const data = {
         modelFile: this.modelFile,
         datasetFile: this.datasetFile,
@@ -344,6 +425,15 @@ data() {
         targetSuperclassIdx: this.targetSuperclassIdx,
       };
       console.log(data)
+      sessionStorage.setItem("modelFile", this.modelFile);
+      sessionStorage.setItem("datasetFile", this.datasetFile);
+      sessionStorage.setItem("algorithm", this.algorithm);
+      sessionStorage.setItem("epoch", this.epoch);
+      sessionStorage.setItem("learningRate", this.learningRate);
+      sessionStorage.setItem("directModelReuse", this.directModelReuse);
+      sessionStorage.setItem("targetClass", this.targetClass);
+      sessionStorage.setItem("alpha", this.alpha);
+      sessionStorage.setItem("targetSuperclassIdx", this.targetSuperclassIdx);
 
 
       // Send POST requests to Flask
@@ -360,23 +450,36 @@ data() {
         });
     },
     download() {
-      axios({
-        method: 'GET',
-        url: 'http://localhost:5000/download',  // Flask后端下载路由
-        responseType: 'blob'  // 表明返回类型是 Blob
+      const data = {
+        modelFile: this.modelFile,
+        datasetFile: this.datasetFile,
+        algorithm: this.algorithm,
+        epoch: this.epoch,
+        learningRate: this.learningRate,
+        directModelReuse: this.directModelReuse,
+        targetClass: this.targetClass,
+        alpha: this.alpha,
+        targetSuperclassIdx: this.targetSuperclassIdx,
+      };
+      axios.post('http://localhost:5000/download', data, {
+        responseType: 'blob'
       })
       .then(response => {
-        // 创建一个不可见的 'a' 标签用于下载
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', 'lr_head_mask_0.1_0.01_alpha_1.0.pth');  // 你的文件名
+        // 从响应头中拿文件名
+        const fileName = response.headers['content-disposition'];
+        console.log('downloadName: ' + fileName);
+        console.log(response.headers);
+        link.setAttribute('download', fileName);
         document.body.appendChild(link);
         link.click();
       })
-      .catch(err => {
-        console.log(err);
+      .catch(error => {
+        console.error("Download error: ", error);
       });
+
     },  
     checkRunInformation(){
       console.log('form:'+this.form)
@@ -389,6 +492,7 @@ data() {
       console.log('learningRate:'+this.learningRate)
       console.log('modelFile:'+this.modelFile)
       console.log('datasetFile:'+this.datasetFile)
+
     },
   },
 };
@@ -396,6 +500,11 @@ data() {
 </script>
 
 <style>
+.reuseclass{
+  font-family: Arial, sans-serif;
+  color: #333;
+
+}
 .el-container {
     height: 100%; 
     width: 100%;
@@ -425,6 +534,10 @@ data() {
 .selectItem .el-form-item__label{
     font-size: large;
     font-weight: bold;
+}
+.selectItemMini .el-form-item__label{
+    font-weight: bold;
+    font-size: medium;
 }
 .direct-model-reuse .el-form-item__content{
     font-size: large;

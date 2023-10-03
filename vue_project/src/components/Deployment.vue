@@ -2,10 +2,11 @@
 
     <el-container>
         <el-header style="height: 85px;">
-        <span style="margin-top: 0;margin-left: 5%;"  @click="jumptohome"> SEAMGrad Tool Demo</span>
+        <span style="margin-top: 0;margin-left: 5%;"  @click="jumptohome"> SeaMGrad Tool Demo</span>
         </el-header>
         <el-main>
-            <h2 style="text-align: left;margin-left: 15%;">
+            <h2 style="text-align: left;margin-left: 15%;margin-top: 2%;margin-bottom: 3%;">
+                <i class="el-icon-arrow-left" style="margin-right: 5px;" @click="jumptohome"></i>
                 Model Deployment</h2>
             <div style="text-align: center;">
                 <div class="DatatTable" style="margin-left: 20%;margin-right: 20%;margin-top: 40px;">
@@ -94,6 +95,7 @@
 
 
 <script>
+import axios from 'axios';
 export default {
     sockets:{
         connect: function(){
@@ -108,6 +110,29 @@ export default {
             console.log('received message: ' + data);
             this.logs += 'Message: ' + data + '\n';
         }
+    },
+    created (){
+        var modelFile = sessionStorage.getItem("modelFile");
+        var datasetFile = sessionStorage.getItem("datasetFile");
+        var algorithm = sessionStorage.getItem("algorithm");
+        var epoch = sessionStorage.getItem("epoch");
+        var learningRate = sessionStorage.getItem("learningRate");
+        var directModelReuse = sessionStorage.getItem("directModelReuse");
+        var targetClass = sessionStorage.getItem("targetClass");
+        var alpha = sessionStorage.getItem("alpha");
+        var targetSuperclassIdx = sessionStorage.getItem("targetSuperclassIdx");
+        this.dataTable.modelFile = modelFile
+        this.dataTable.datasetFile = datasetFile
+        this.dataTable.algorithm = algorithm
+        this.dataTable.epoch = epoch
+        this.dataTable.learningRate = learningRate
+        this.dataTable.directModelReuse = directModelReuse
+        this.dataTable.targetClass = targetClass
+        this.dataTable.alpha = alpha
+        this.dataTable.targetSuperclassIdx = targetSuperclassIdx
+
+        
+        console.log(this.dataTable)
     },
     data () {
         return{
@@ -132,6 +157,7 @@ export default {
 
     },
     methods: {
+        setParam(){},
         // Upload single picture
         handleRemove(file, fileList) {
             console.log(file, fileList);
