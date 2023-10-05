@@ -14,6 +14,7 @@ from GradSplitter_main.src.global_configure import global_config as global_confi
 from GradSplitter_main.src.script.run_train import run_train_script
 from GradSplitter_main.src.script.run_splitter import run_splitter_script
 from GradSplitter_main.src.script.run_module_reuse_for_accurate_model import run_ensemble_modules_script
+from GradSplitter_main.src.script.run_module_reuse_for_new_task import run_reuse_modules_script
 import os
 from GradSplitter_main.src.train import run_train
 from GradSplitter_main.src.grad_splitter import run_grad_splitter
@@ -85,9 +86,11 @@ if __name__ == "__main__":
     #                            target_class=target_class, lr_mask=learning_rate, alpha=alpha)
 
     
-    run_calculate_flop_mc(model="resnet20", dataset="cifar100", 
-                   target_superclass_idx=0, lr_mask=0.1, alpha=2.0,
-                   callback="debug")
+    # run_calculate_flop_mc(model="resnet20", dataset="cifar100", 
+    #                target_superclass_idx=0, lr_mask=0.1, alpha=2.0,
+    #                callback="debug")
+    print("run_reuse_modules_script")
+    run_reuse_modules_script()
 
     # run_calculate_flop(model="vgg16", dataset="cifar10", 
     #                target_class=0, lr_mask=0.01, alpha=1.0)

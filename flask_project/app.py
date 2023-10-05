@@ -21,6 +21,7 @@ from GradSplitter_main.src.script.run_splitter import run_splitter_script
 from GradSplitter_main.src.script.select_modules import run_select_modules_script
 from GradSplitter_main.src.script.run_evaluate_modules import run_evaluate_modules_script
 from GradSplitter_main.src.script.run_module_reuse_for_accurate_model import run_ensemble_modules_script
+from GradSplitter_main.src.script.run_module_reuse_for_new_task import run_reuse_modules_script_pair
 
 import threading
 
@@ -46,7 +47,6 @@ def index():
 def handle_connect():
     print("Client connected")
     emit('message', 'Successfully connected to the server!')
-
 
 # Given name of algorithm, find the directory of it
 # ================后面想办法把路径抽象出来======================
@@ -93,11 +93,6 @@ def benchmark():
                 try:
                     print("Run function started.")  # Debug line
                     if direct_model_reuse=='Binary Classification':
-                        # model_file="vgg16"
-                        # dataset_file="cifar10"
-                        # target_class=0
-                        # learning_rate=0.01
-                        # alpha=1.0
                         socketio.emit('message','\nReengineering Model, Please Wait!!!')
                         print("\nReengineering Model, Please Wait!!!")
                         # run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
@@ -162,7 +157,6 @@ def tc_legal(target_class_str):
 
 @app.route('/run_model', methods=['POST'])
 def run_model():
-    # Get data from requests
     data = request.get_json()
     print(data)
     model_file = data.get('modelFile')
@@ -176,15 +170,6 @@ def run_model():
     alpha = float(data.get('alpha'))
     target_class = tc_legal(target_class_str)
     target_superclass_idx = tc_legal(target_superclass_idx_str)
-    # session["model_file"]=model_file
-    # session["dataset_file"]=dataset_file
-    # session["algorithm"]=algorithm
-    # session["epoch"]=epoch
-    # session["learning_rate"]=learning_rate
-    # session["direct_model_reuse"]=direct_model_reuse
-    # session["target_class"]=target_class
-    # session["alpha"]=alpha
-    # print(f"Setting session: {session}")
     if algorithm=='SEAM':
         try:
             def callback(m_total_flop_dense, m_total_flop_sparse, 
@@ -235,7 +220,6 @@ def run_model():
                 else:
                     print("Model reuse type error!!")
                     return ValueError
-                
             # start a new thread to run the model
             threading.Thread(target=run).start()
             return {'logs': "Model run successfully", 'isModelReady': True}, 200
@@ -267,6 +251,49 @@ def run_model():
         except Exception as e:
             return {'logs': str(e), 'isModelReady': False}, 500
         return
+# Reuse module
+@app.route('/run_reuse', methods=['POST'])
+def run_reuse():
+    data = request.get_json()
+    print(data)
+    model_file = data.get('modelFile')
+    dataset_file = data.get('datasetFile')
+    algorithm = data.get('algorithm')
+    epoch = data.get('epoch')
+    reuseMethod = data.get('reuseMethod')
+    cifarclass = data.get('cifarclass')
+    svhnclass = data.get('svhnclass')
+    if reuseMethod == "More Accurate":
+        try:
+            def callback(best_modules,best_epoch,best_acc,best_avg_kernel):
+                socketio.emit('model_result', f'Best Module: {best_modules}')
+                socketio.emit('model_result', f'Best_epoch: {best_epoch}')
+                socketio.emit('model_result', f'Best_acc: {best_acc * 100:.2f}%')
+                socketio.emit('model_result', f'Best_avg_kernel: {best_avg_kernel:.2f}')
+            def run():
+                socketio.emit('message','\n Evaluating Modules......')
+                run_evaluate_modules_script(model=model_file,dataset=dataset_file)
+                socketio.emit('message','\n Trying to ensemble a more accurate model......')
+                run_ensemble_modules_script(model=model_file,dataset=dataset_file)
+                socketio.emit('message','\n New accuate model ensembled!!!')
+            threading.Thread(target=run).start()
+            return {'logs': "Model run successfully", 'isModelReady': True}, 200
+        except Exception as e:
+            return {'logs': str(e), 'isModelReady': False}, 500
+    elif reuseMethod == "For New Task":
+        print("Model reuse for new task......")
+        try:
+            def callback(acc):
+                socketio.emit('model_result', f'ACC: {acc:.2f}')
+            def run():
+                socketio.emit('message','\n Evaluating Modules......')
+                run_reuse_modules_script_pair(model_file,cifarclass,svhnclass,callback=callback)
+                socketio.emit('message',f'\n Select module {cifarclass} for CIFAR, {svhnclass} for SVHN!')
+            threading.Thread(target=run).start()
+            return {'logs': "Model run successfully", 'isModelReady': True}, 200
+        except Exception as e:
+            return {'logs': str(e), 'isModelReady': False}, 500
+    return
 # Download module
 # Requires parameters
 @app.route('/download', methods=['POST'])

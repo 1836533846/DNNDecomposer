@@ -1,5 +1,4 @@
 import argparse
-import sys
 import numpy as np
 import torch
 
@@ -135,6 +134,7 @@ def main_func(args):
     modules = cifar_modules + svhn_modules
     acc = evaluate_reusing(modules, test_loader)
     print(f'ACC: {acc * 100:.2f}')
+    return acc
 
 def get_args(model,class_cifar='0',class_svhn='0'):
     args = argparse.Namespace()
@@ -145,7 +145,8 @@ def get_args(model,class_cifar='0',class_svhn='0'):
 
 def run_reuse_modules(model,class_cifar,class_svhn):
     args = get_args(model,class_cifar,class_svhn)
-    main_func(args)
+    acc = main_func(args)
+    return acc
 
 
 # if __name__ == '__main__':
