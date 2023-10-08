@@ -122,7 +122,7 @@
                     <span> <el-input readonly resize="none"
                         type="textarea"
                         rows="7"
-                        v-model="logs"
+                        v-model="seambenchmarklogs"
                         style="width: 100%;margin-top: 40px;">
                     </el-input></span>
                     <span slot="footer" class="dialog-footer">
@@ -162,7 +162,7 @@
                     <span> <el-input readonly resize="none"
                         type="textarea"
                         rows="7"
-                        v-model="logs"
+                        v-model="gradbenchmarklogs"
                         style="width: 100%;margin-top: 40px;">
                     </el-input></span>
                     <span slot="footer" class="dialog-footer">
@@ -184,26 +184,57 @@
 
 <script>
 import axios from 'axios';
+import io from 'socket.io-client';
+
 export default {
-    sockets:{
-        connect: function(){
-            console.log('socket connected')
-        },
-        model_result: function(data){
-            console.log('received model result: ' + JSON.stringify(data));
-            this.modelResult = data;
-            this.logs += 'Model Result: ' + JSON.stringify(data) + '\n';
-        },
-        message: function(data){
-            console.log('received message: ' + data);
-            this.logs += 'Message: ' + data + '\n';
-        }
+    created(){
+        // 初始化socket连接
+        this.socket = io('http://localhost:5000/');
+
+        // 设置socket事件监听器
+        this.socket.on('connect', () => {
+            console.log('socket connected');
+        });
+
+
+        // SEAM SOCKET ON 
+        this.socket.on('seam_result', (data) => {
+            console.log('received seam result: ' + JSON.stringify(data));
+            this.seambenchmarklogs += 'SeaM Result: ' + JSON.stringify(data) + '\n';
+        });
+
+        this.socket.on('seam_message', (data) => {
+            console.log('received seam message: ' + data);
+            this.seambenchmarklogs += 'Message: ' + data + '\n';
+        });
+
+        // GRAD SOCKET ON 
+        this.socket.on('grad_result', (data) => {
+            console.log('received grad result: ' + JSON.stringify(data));
+            this.gradbenchmarklogs += 'GradSplitter Result: ' + JSON.stringify(data) + '\n';
+        });
+
+        this.socket.on('grad_message', (data) => {
+            console.log('received grad message: ' + data);
+            this.gradbenchmarklogs += 'Message: ' + data + '\n';
+        });
+
     },
+    beforeDestroy() {
+    // 在组件销毁前，移除事件监听器并关闭socket连接
+        this.socket.off('connect');
+        this.socket.off('seam_result');
+        this.socket.off('seam_message');
+        this.socket.off('grad_result');
+        this.socket.off('grad_message');
+        this.socket.close();
+  },
     data () {
         return{
             SEAMdialogVisible :false,
             GRADdialogVisible: false,
-            logs:'',
+            seambenchmarklogs:'',
+            gradbenchmarklogs:'',
             dataTable:{modelName:'SimCNN', dataset:'CIFAR-10', epochs:'100',lr:'0.01', alogrithm:'GradSplitter'},
             tableDataSEAM: [{
                 targetProblem: 'Binary Classification',
@@ -299,12 +330,12 @@ export default {
            axios.post('http://localhost:5000/benchmark', data)
                 .then(response => {
                     // success, return results
-                    this.logs = response.data.logs;
+                    this.seambenchmarklogs = response.data.logs;
                 })
                 .catch(error => {
                     // return errors
                     console.error(error);
-                    this.logs = 'An error occurred while deloping the benchmark.';
+                    this.seambenchmarklogs = 'An error occurred while deloping the benchmark.';
             });
            
         },
@@ -324,12 +355,12 @@ export default {
            axios.post('http://localhost:5000/benchmark', data)
                 .then(response => {
                     // success, return results
-                    this.logs = response.data.logs;
+                    this.gradbenchmarklogs = response.data.logs;
                 })
                 .catch(error => {
                     // return errors
                     console.error(error);
-                    this.logs = 'An error occurred while deloping the benchmark.';
+                    this.gradbenchmarklogs = 'An error occurred while deloping the benchmark.';
             });
         },
         coloredrow({row, rowIndex}) {

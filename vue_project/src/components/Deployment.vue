@@ -7,7 +7,7 @@
         <el-main>
             <h2 style="text-align: left;margin-left: 15%;margin-top: 2%;margin-bottom: 3%;">
                 <i class="el-icon-arrow-left" style="margin-right: 5px;" @click="jumptohome"></i>
-                Model Deployment</h2>
+                Module Deployment</h2>
             <div style="text-align: center;">
                 <div class="DatatTable" style="margin-left: 20%;margin-right: 20%;margin-top: 40px;">
                 <el-descriptions title="Model Modularization Information" border>
@@ -42,44 +42,38 @@
             </div>
             
             <h4 style="text-align: left;margin-left: 20%;margin-right: 20%;margin-top: 80px;">
-                Model Deployment</h4>
+                Module Deployment</h4>
             
             <div style="margin-left: 20%;margin-right: 20%;margin-top: 20px;text-align: left;">
                 <el-row>
                     <el-col :span="8">
-                    <div class="uploadFig" >
-                        <el-upload
-                            class="uploadSinglePicture"
-                            action="#" 
-                            accept="image/jpg, image/jpeg, image/png"
-                            :limit="1"
-                            :on-preview="handlePreview"
-                            :on-remove="handleRemove"
-                            :before-remove="beforeRemove"
-                            :on-exceed="handleExceed"
-                            :file-list="fileList"   
-                        >
-                            <el-button type="primary"  slot="trigger" style="margin-bottom: 10px;"> 
-                                Browse... </el-button>
-                            <el-button style="margin-left: 10px;margin-bottom: 10px;" type="warning" 
-                                @click="submitUpload">Run</el-button>
-                            <div slot="tip" class="el-upload__tip">※Upload jpg/jpeg/png files with a size less than 5MB.</div>
-                            <img v-if="imageUrl" :src="imageUrl" style="width:90%;max-height: 217px;">
-                        </el-upload>
+                    <div class="figfileList" >
+                        <el-card class="catdogcard" :body-style="{ padding: '10px 20px' }" 
+                        :shadow="(this.selectedImage === 'cat')? 'always' : 'hover'">
+                            <el-image :src="catURL" style="height: 80px;width:100px;float:left" fit ="cover"></el-image>
+                            <el-radio v-model="selectedImage" label="cat" >Cat </el-radio>
+                        </el-card>
+
+                        <el-card class="catdogcard" :body-style="{ padding: '10px 20px' }"
+                        :shadow="(this.selectedImage === 'dog')? 'always' : 'hover'">
+                            <el-image :src="dogURL" style="height: 80px;width:100px;float:left" fit ="cover"></el-image>
+                            <el-radio v-model="selectedImage" label="dog" >Dog </el-radio>
+                        </el-card>
+
+                        <el-button type="primary"  slot="trigger" style="margin-bottom: 10px;float: right;"> 
+                            Browse and Upload Image </el-button>
+                        <el-button style="margin-left: 10px;margin-bottom: 10px;" type="warning" 
+                            @click="submitDelopyment">Run</el-button>
+
                     </div> </el-col>
 
-
-                    <!-- result -->
                     <el-col :span="16"><div style="text-align: right;">
                         <el-input readonly resize="none"
                             type="textarea"
                             rows="12"
-                            v-model="logs"
+                            v-model="deploymentlogs"
                             style="width: 96%;margin-right: 0px;">
                         </el-input>
-                        <div v-if="modelResult">
-                            Model Result: {{ modelResult.status }}
-                        </div>
                     
                     </div></el-col>
                 </el-row>
@@ -96,21 +90,10 @@
 
 <script>
 import axios from 'axios';
+import io from 'socket.io-client';
+import catfig from '@/image/cat.jpg'
+import dogfig from '@/image/dog.jpg'
 export default {
-    sockets:{
-        connect: function(){
-            console.log('socket connected')
-        },
-        model_result: function(data){
-            console.log('received model result: ' + JSON.stringify(data));
-            this.modelResult = data;
-            this.logs += 'Model Result: ' + JSON.stringify(data) + '\n';
-        },
-        message: function(data){
-            console.log('received message: ' + data);
-            this.logs += 'Message: ' + data + '\n';
-        }
-    },
     created (){
         var modelFile = sessionStorage.getItem("modelFile");
         var datasetFile = sessionStorage.getItem("datasetFile");
@@ -130,12 +113,37 @@ export default {
         this.dataTable.targetClass = targetClass
         this.dataTable.alpha = alpha
         this.dataTable.targetSuperclassIdx = targetSuperclassIdx
-
-        
         console.log(this.dataTable)
+
+        // 初始化socket连接
+        this.socket = io('http://localhost:5000/');
+
+        // 设置socket事件监听器
+        this.socket.on('connect', () => {
+            console.log('socket connected');
+        });
+
+        this.socket.on('deployment_result', (data) => {
+            console.log('received deployment result: ' + JSON.stringify(data));
+            this.deploymentlogs += 'Module DeployMent Result: ' + JSON.stringify(data) + '\n';
+        });
+
+        this.socket.on('deployment_message', (data) => {
+            console.log('received deployment message: ' + data);
+            this.deploymentlogs += 'Message: ' + data + '\n';
+        });
+
+    },
+    beforeDestroy() {
+    // 在组件销毁前，移除事件监听器并关闭socket连接
+        this.socket.off('connect');
+        this.socket.off('deployment_result');
+        this.socket.off('deployment_message');
+        this.socket.close();
     },
     data () {
         return{
+            selectedImage: '', // ='cat' or 'dog'
             // dataTable:
             //     {algorithm:'GradSplitter', //test Data Grad
             //     modelFile:'SimCNN', datasetFile:'CIFAR-10',learningRate:'0.01',
@@ -149,15 +157,33 @@ export default {
             //     modelFile:'ResNet20', datasetFile:'CIFAR-10', learningRate:'0.01',
             //     directModelReuse:'Defect Inheritance', alpha:'1.00' },
             fileList:[],
-            modelResult: null,
-            logs: '',  // Running logs 
-            imageUrl: 'https://t7.baidu.com/it/u=4162611394,4275913936&fm=193&f=GIF'     
+
+            deploymentlogs: '',  // Running logs 
+            imageUrl: 'https://t7.baidu.com/it/u=4162611394,4275913936&fm=193&f=GIF' ,
+            catURL: catfig,
+            dogURL: dogfig,
 
         }
 
     },
     methods: {
+        jumptohome(){
+            this.$router.push('/modularization')
+        },
         setParam(){},
+        submitDelopyment(){
+            const data = {
+                image: this.selectedImage
+            };
+            axios.post('http://localhost:5000/run_deployment', data)
+            .catch(error => {
+                // return errors
+                console.error(error);
+                this.logs = 'An error occurred while running the model.';
+            });
+        },  
+        
+
         // Upload single picture
         handleRemove(file, fileList) {
             console.log(file, fileList);
@@ -184,9 +210,7 @@ export default {
             this.fileList = fileList
             console.log(this.fileList)
         },
-        jumptohome(){
-            this.$router.push('/modularization')
-        },
+        
     },
 
 
@@ -241,5 +265,12 @@ export default {
 }
 .el-upload --text {
     align-items: left;
+}
+
+.catdogcard {
+    height:100px;
+    margin-bottom: 10px;
+    line-height: 80px;
+    text-align: center;
 }
 </style>
