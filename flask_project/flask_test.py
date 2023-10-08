@@ -18,6 +18,9 @@ from GradSplitter_main.src.script.run_module_reuse_for_new_task import run_reuse
 import os
 from GradSplitter_main.src.train import run_train
 from GradSplitter_main.src.grad_splitter import run_grad_splitter
+from GradSplitter_main.src.global_configure import global_config as global_config_Grad
+
+print(global_config_Grad.data_dir)
 
 # run_calculate_flop测试ok，但是
 # No such file or directory: 
@@ -27,6 +30,11 @@ from GradSplitter_main.src.grad_splitter import run_grad_splitter
 
 # run_calculate_flop(model="vgg16", dataset="cifar10", 
 #                    target_class=0, lr_mask=0.01, alpha=1)
+
+
+from SeaM_main.src.binary_class.SeaM_reasoning import cifar10_inference
+label = cifar10_inference.predict('image/cat.png')
+print(f"LABEL:{label}")
 
 model_file="vgg16"
 dataset_file="cifar10"

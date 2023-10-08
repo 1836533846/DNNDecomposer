@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from tqdm import tqdm
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-
 class Reengineer:
     def __init__(self, pretrained_model, train_dataset, val_dataset, acc_pre_model):
         self.pt_model = pretrained_model

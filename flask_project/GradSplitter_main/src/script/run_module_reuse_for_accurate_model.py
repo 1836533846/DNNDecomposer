@@ -45,6 +45,8 @@ module_idx = '6,1,10,6,3,3,10,6,1,1'  # SimCNN 模型的index，class0选择了�
 #################################################################
 model = 'simcnn'
 dataset = 'cifar10'
-def run_ensemble_modules_script(model,dataset,estimator_indices=module_idx):
-    run_ensemble_modules(model=model,dataset=dataset,estimator_indices=estimator_indices)
+def run_ensemble_modules_script(model,dataset,estimator_indices=module_idx,callback = "debug"):
+    acc = run_ensemble_modules(model=model,dataset=dataset,estimator_indices=estimator_indices)
+    if callback!="debug":
+        callback(acc)
 

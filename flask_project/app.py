@@ -1,6 +1,5 @@
 from datetime import timedelta
-from flask import Flask, request, render_template, send_from_directory,session,jsonify
-from flask_session import Session
+from flask import Flask, request, render_template, send_from_directory,jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO,emit
 import os
@@ -13,6 +12,8 @@ from SeaM_main.src.binary_class.run_model_reengineering import run_model_reengin
 from SeaM_main.src.defect_inherit.run_reengineering_finetune import run_reengineering_finetune
 from SeaM_main.src.defect_inherit.run_eval_robustness import run_eval_robustness
 from SeaM_main.src.defect_inherit.run_standard_finetune import run_standard_finetune
+from SeaM_main.src.binary_class.SeaM_reasoning import cifar10_inference
+# cifar10_inference.predict('image/cat.jpg')
 # Golbal config for SeaM
 from SeaM_main.src.global_config import global_config as global_config_SeaM
 
@@ -22,37 +23,33 @@ from GradSplitter_main.src.script.select_modules import run_select_modules_scrip
 from GradSplitter_main.src.script.run_evaluate_modules import run_evaluate_modules_script
 from GradSplitter_main.src.script.run_module_reuse_for_accurate_model import run_ensemble_modules_script
 from GradSplitter_main.src.script.run_module_reuse_for_new_task import run_reuse_modules_script_pair
+# Golbal config for Grad
+from GradSplitter_main.src.global_configure import global_config as global_config_Grad
+
 
 import threading
 
 app = Flask(__name__)
 CORS(app,expose_headers=['Content-Disposition'])
 
+app.config['UPLOAD_FOLDER'] = 'uploads'
 # create a SocketIO instance
-app.config['SECRET_KEY'] = 'session:'
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_FILE_DIR'] = './.flask_session/'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
-socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False,\
+socketio = SocketIO(app, cors_allowed_origins="*",\
                     expose_headers=['Content-Disposition'])
-# 初始化session
-Session(app)
-
 
 @app.route('/')
 def index():
-    return "哈喽，沃德！"
+    return "Welcome!"
 
 @socketio.on('connect')
 def handle_connect():
     print("Client connected")
-    emit('message', 'Successfully connected to the server!')
+    socketio.emit('message', 'Successfully connected to the server!')
 
 # Given name of algorithm, find the directory of it
 # ================后面想办法把路径抽象出来======================
 def dir_convert(algorithm, direct_model_reuse, model_file, dataset_file,
             target_class_str, target_superclass_idx_str,lr_mask,alpha,lr_head=0.1):
-    # print(algorithm)
     if algorithm == "SEAM":
         # This is the real data dir in project!!!!!!!!!!!!!!!!!
         # algorithm_path = f"{global_config_SeaM.data_dir}/flask_project"
@@ -66,8 +63,8 @@ def dir_convert(algorithm, direct_model_reuse, model_file, dataset_file,
         return f"{algorithm_path}{model_reuse_path}",file_name
     # =====================================TO BE CONTINUED============================
     elif algorithm == "GradSplitter":
-        algorithm_path = "/GradSplitter_main/data/"
-
+        # algorithm_path = f"{global_config_Grad.data_dir}"
+        algorithm_path = "/data/bixh/ToolDemo_GS/GradSplitter_main/data"
 
 @app.route('/benchmark', methods=['POST'])
 def benchmark():
@@ -84,20 +81,19 @@ def benchmark():
         try:
             def callback(m_total_flop_dense, m_total_flop_sparse, 
                         perc_sparse_dense, acc_reeng, acc_pre):
-                socketio.emit('model_result', f'FLOPs Dense: {m_total_flop_dense:.2f}M')
-                socketio.emit('model_result', f'FLOPs Sparse: {m_total_flop_sparse:.2f}M')
-                socketio.emit('model_result', f'FLOPs % (Sparse / Dense): {perc_sparse_dense:.2%}')
-                socketio.emit('model_result', f'Pretrained Model ACC: {acc_pre:.2%}')
-                socketio.emit('model_result', f'Reengineered Model ACC: {acc_reeng:.2%}')
+                socketio.emit('seam_result', f'FLOPs Dense: {m_total_flop_dense:.2f}M')
+                socketio.emit('seam_result', f'FLOPs Sparse: {m_total_flop_sparse:.2f}M')
+                socketio.emit('seam_result', f'FLOPs % (Sparse / Dense): {perc_sparse_dense:.2%}')
+                socketio.emit('seam_result', f'Pretrained Model ACC: {acc_pre:.2%}')
+                socketio.emit('seam_result', f'Reengineered Model ACC: {acc_reeng:.2%}')
             def run():
                 try:
-                    print("Run function started.")  # Debug line
                     if direct_model_reuse=='Binary Classification':
-                        socketio.emit('message','\nReengineering Model, Please Wait!!!')
+                        socketio.emit('seam_message','\nReengineering Model, Please Wait!!!')
                         print("\nReengineering Model, Please Wait!!!")
                         # run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
                         #                 target_class=target_class,lr_mask=learning_rate, alpha=alpha)
-                        socketio.emit('message','\nModel is ready, waiting for calculating flops......')
+                        socketio.emit('seam_message','\nModel is ready, waiting for calculating flops......')
                         run_calculate_flop_bc(model=model_file, dataset=dataset_file, 
                                     target_class=target_class, lr_mask=learning_rate, alpha=alpha,
                                     callback=callback)
@@ -118,22 +114,22 @@ def benchmark():
     elif algorithm=='GradSplitter':
         try:
             def callback(best_modules,best_epoch,best_acc,best_avg_kernel):
-                socketio.emit('model_result', f'Best Module: {best_modules}')
-                socketio.emit('model_result', f'Best_epoch: {best_epoch}')
-                socketio.emit('model_result', f'Best_acc: {best_acc * 100:.2f}%')
-                socketio.emit('model_result', f'Best_avg_kernel: {best_avg_kernel:.2f}')
+                socketio.emit('grad_result', f'Best Module: {best_modules}')
+                socketio.emit('grad_result', f'Best_epoch: {best_epoch}')
+                socketio.emit('grad_result', f'Best_acc: {best_acc * 100:.2f}%')
+                socketio.emit('grad_result', f'Best_avg_kernel: {best_avg_kernel:.2f}')
             def run():
-                socketio.emit('message','\n Reengineering Model, Please Wait!!!')
+                socketio.emit('grad_message','\n Reengineering Model, Please Wait!!!')
                 run_splitter_script(model=model_file,dataset=dataset_file)
-                socketio.emit('message','\n Reengineering Done!')
-                socketio.emit('message','\n Selecting Modules, Please Wait!!!')
+                socketio.emit('grad_message','\n Reengineering Done!')
+                socketio.emit('grad_message','\n Selecting Modules, Please Wait!!!')
                 run_select_modules_script(model=model_file,dataset=dataset_file)
-                socketio.emit('message','\n Modules Selected!!!')
-                socketio.emit('message','\n Evaluating Modules......')
+                socketio.emit('grad_message','\n Modules Selected!!!')
+                socketio.emit('grad_message','\n Evaluating Modules......')
                 run_evaluate_modules_script(model=model_file,dataset=dataset_file)
-                socketio.emit('message','\n Trying to ensemble a more accurate model......')
+                socketio.emit('grad_message','\n Trying to ensemble a more accurate model......')
                 run_ensemble_modules_script(model=model_file,dataset=dataset_file)
-                socketio.emit('message','\n New accuate model ensembled!!!')
+                socketio.emit('grad_message','\n New accuate model ensembled!!!')
 
             # start a new thread to run the model
             threading.Thread(target=run).start()
@@ -167,7 +163,7 @@ def run_model():
     direct_model_reuse = data.get('directModelReuse')
     target_class_str = data.get('targetClass')
     target_superclass_idx_str = data.get('targetSuperclassIdx')
-    alpha = float(data.get('alpha'))
+    alpha = float(tc_legal(data.get('alpha')))
     target_class = tc_legal(target_class_str)
     target_superclass_idx = tc_legal(target_superclass_idx_str)
     if algorithm=='SEAM':
@@ -234,18 +230,11 @@ def run_model():
                 socketio.emit('model_result', f'Best_avg_kernel: {best_avg_kernel:.2f}')
             def run():
                 socketio.emit('message','\n Reengineering Model, Please Wait!!!')
-                run_splitter_script(model=model_file,dataset=dataset_file)
+                # run_splitter_script(model=model_file,dataset=dataset_file)
                 socketio.emit('message','\n Reengineering Done!')
                 socketio.emit('message','\n Selecting Modules, Please Wait!!!')
-                run_select_modules_script(model=model_file,dataset=dataset_file)
+                # run_select_modules_script(model=model_file,dataset=dataset_file)
                 socketio.emit('message','\n Modules Selected!!!')
-                socketio.emit('message','\n Evaluating Modules......')
-                run_evaluate_modules_script(model=model_file,dataset=dataset_file)
-                socketio.emit('message','\n Trying to ensemble a more accurate model......')
-                run_ensemble_modules_script(model=model_file,dataset=dataset_file)
-                socketio.emit('message','\n New accuate model ensembled!!!')
-
-            # start a new thread to run the model
             threading.Thread(target=run).start()
             return {'logs': "Model run successfully", 'isModelReady': True}, 200
         except Exception as e:
@@ -265,17 +254,14 @@ def run_reuse():
     svhnclass = data.get('svhnclass')
     if reuseMethod == "More Accurate":
         try:
-            def callback(best_modules,best_epoch,best_acc,best_avg_kernel):
-                socketio.emit('model_result', f'Best Module: {best_modules}')
-                socketio.emit('model_result', f'Best_epoch: {best_epoch}')
-                socketio.emit('model_result', f'Best_acc: {best_acc * 100:.2f}%')
-                socketio.emit('model_result', f'Best_avg_kernel: {best_avg_kernel:.2f}')
+            def callback(acc):
+                socketio.emit('reuse_result', f'Best acc: {acc * 100:.2f}%')
             def run():
-                socketio.emit('message','\n Evaluating Modules......')
+                socketio.emit('reuse_message','\n Evaluating Modules......')
                 run_evaluate_modules_script(model=model_file,dataset=dataset_file)
-                socketio.emit('message','\n Trying to ensemble a more accurate model......')
+                socketio.emit('reuse_message','\n Trying to ensemble a more accurate model......')
                 run_ensemble_modules_script(model=model_file,dataset=dataset_file)
-                socketio.emit('message','\n New accuate model ensembled!!!')
+                socketio.emit('reuse_message','\n New accuate model ensembled!!!')
             threading.Thread(target=run).start()
             return {'logs': "Model run successfully", 'isModelReady': True}, 200
         except Exception as e:
@@ -284,16 +270,37 @@ def run_reuse():
         print("Model reuse for new task......")
         try:
             def callback(acc):
-                socketio.emit('model_result', f'ACC: {acc:.2f}')
+                socketio.emit('reuse_result', f'ACC: {acc:.2f}')
             def run():
-                socketio.emit('message','\n Evaluating Modules......')
+                socketio.emit('reuse_message',f'\n Evaluating and selecting modules......')
                 run_reuse_modules_script_pair(model_file,cifarclass,svhnclass,callback=callback)
-                socketio.emit('message',f'\n Select module {cifarclass} for CIFAR, {svhnclass} for SVHN!')
+                socketio.emit('reuse_message',f'\n Select module {cifarclass} for CIFAR, {svhnclass} for SVHN!')
             threading.Thread(target=run).start()
-            return {'logs': "Model run successfully", 'isModelReady': True}, 200
+            return {'reuse_message': "Model run successfully", 'isModelReady': True}, 200
         except Exception as e:
-            return {'logs': str(e), 'isModelReady': False}, 500
+            return {'reuse_message': str(e), 'isModelReady': False}, 500
     return
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    if file:
+        filename = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        file.save(filename)
+        
+        # 进行推理
+        result = deployment_reasoning(filename)
+        
+        return jsonify({'result': result})
+    
+def deployment_reasoning():
+    
+    return
+
 # Download module
 # Requires parameters
 @app.route('/download', methods=['POST'])
@@ -308,7 +315,7 @@ def download_file():
     direct_model_reuse = data.get('directModelReuse')
     target_class_str = data.get('targetClass')
     target_superclass_idx_str = data.get('targetSuperclassIdx')
-    alpha = float(data.get('alpha'))
+    alpha = float(tc_legal(data.get('alpha')))
     target_class = tc_legal(target_class_str)
     target_superclass_idx = tc_legal(target_superclass_idx_str)
 
@@ -331,6 +338,15 @@ def download_file():
         print(f"An error occurred: {e}")  # Debug line
         return str(e), 400
 
+@app.route('/run_deployment', methods=['POST'])
+def run_deployment():
+    data = request.get_json()
+    img_name = data.get('image')
+    class_name,class_num = cifar10_inference.predict(f'image/{img_name}.png')
+    print(class_name)
+    result = class_name if class_num!=0 else f"Not cat"
+    socketio.emit('deployment_result',f'{result}')
+    return class_name
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

@@ -47,6 +47,7 @@ def main_func(args,estimator_indices):
     # evaluate ensemble modules.
     acc = evaluate_ensemble_modules(modules, test_dataset)
     print(f"Ensemble Modules Test Accuracy: {acc * 100:.2f}%")
+    return acc
 
 def get_args(model,dataset,estimator_indices):
     args = argparse.Namespace()
@@ -57,11 +58,10 @@ def get_args(model,dataset,estimator_indices):
 
 def run_ensemble_modules(model,dataset,estimator_indices):
     args = get_args(model,dataset,estimator_indices)
-    # args = args.parse_args()
     print(args)
     estimator_indices = [int(idx) for idx in args.estimator_indices.split(',')]
-    main_func(args,estimator_indices)
-    return
+    acc = main_func(args,estimator_indices)
+    return acc
 
 # if __name__ == '__main__':
 #     parser = argparse.ArgumentParser()

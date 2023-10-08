@@ -1,15 +1,13 @@
-from datasets import load_dataset
-import pyarrow.parquet as pq
+import torch
 
-# # 加载数据集
-# dataset = load_dataset("code_search_net",'php')
-#
-# # 保存到磁盘
-# dataset.save_to_disk("C:/Users/bxh/Downloads")
-dataset = load_dataset("EleutherAI/pile",'github')
+checkpoint = torch.load('flask_project/SeaM_main/data/binary_classification/vgg16_cifar10/tc_0/lr_head_mask_0.1_0.01_alpha_1.0.pth')
 
-# dataset.save_to_disk("D:/pile")
-
-# dataset = load_dataset("code_search_net", "php")
-print(dataset['train'][0])  # 打印训练集的第一个样本
-
+for key in checkpoint.keys():
+    # print(f'\n{key}')
+    if "mask" in key:
+        mask_tensor = checkpoint[key]
+        print(f"Key: {key}")
+        print(f"Shape: {mask_tensor.shape}")
+        print(f"Average: {torch.mean(mask_tensor.float()):.4f}")
+        print(f"Max: {torch.max(mask_tensor):.4f}")
+        print(f"Min: {torch.min(mask_tensor):.4f}")
