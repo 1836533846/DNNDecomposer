@@ -73,7 +73,7 @@ def benchmark():
     model_file = data.get('modelFile')
     dataset_file = data.get('datasetFile')
     algorithm = data.get('algorithm')
-    learning_rate = data.get('learningRate')
+    learning_rate = float(data.get('learningRate'))
     direct_model_reuse = data.get('directModelReuse')
     target_class = 0
     alpha = float(data.get('alpha'))
@@ -159,7 +159,7 @@ def run_model():
     dataset_file = data.get('datasetFile')
     algorithm = data.get('algorithm')
     epoch = data.get('epoch')
-    learning_rate = data.get('learningRate')
+    learning_rate = float(data.get('learningRate'))
     direct_model_reuse = data.get('directModelReuse')
     target_class_str = data.get('targetClass')
     target_superclass_idx_str = data.get('targetSuperclassIdx')
@@ -175,11 +175,17 @@ def run_model():
                 socketio.emit('model_result', f'FLOPs % (Sparse / Dense): {perc_sparse_dense:.2%}')
                 socketio.emit('model_result', f'Pretrained Model ACC: {acc_pre:.2%}')
                 socketio.emit('model_result', f'Reengineered Model ACC: {acc_reeng:.2%}')
+            def get_epochs(epoch,n_epoch=300):
+                epoch_percentage = (epoch/n_epoch)*100
+                socketio.emit('get_progress_percentage', epoch_percentage)
+                print(f"Epoch percentage:{epoch_percentage:.2f}%")
+                return epoch_percentage
             def run():
                 if direct_model_reuse=='Binary Classification':
                     socketio.emit('message','\nReengineering Model, Please Wait!!!')
-                    # run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
-                    #                 target_class=target_class,lr_mask=learning_rate, alpha=alpha)
+                    run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
+                                    target_class=target_class,lr_mask=learning_rate, alpha=alpha, 
+                                    n_epochs=300,get_epochs=get_epochs)
                     socketio.emit('message','\nModel is ready, waiting for calculating flops......')
                     run_calculate_flop_bc(model=model_file, dataset=dataset_file, 
                                 target_class=target_class, lr_mask=learning_rate, alpha=alpha,
@@ -218,7 +224,7 @@ def run_model():
                     return ValueError
             # start a new thread to run the model
             threading.Thread(target=run).start()
-            return {'logs': "Model run successfully", 'isModelReady': True}, 200
+            return {'logs': "Model is decomposing......", 'isModelReady': True}, 200
         except Exception as e:
             return {'logs': str(e), 'isModelReady': False}, 500
     elif algorithm=='GradSplitter':

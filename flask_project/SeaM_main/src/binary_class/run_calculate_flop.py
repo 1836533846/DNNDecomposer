@@ -254,4 +254,4 @@ def run_calculate_flop_bc(model, dataset, target_class, lr_mask, alpha, callback
              perc_sparse_dense, acc_reeng, acc_pre)
     
     return m_total_flop_dense, m_total_flop_sparse, \
-            perc_sparse_dense, acc_reeng, acc_pre;
+            perc_sparse_dense, acc_reeng, acc_pre

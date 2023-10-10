@@ -40,7 +40,7 @@ def get_args(model, dataset, target_class, lr_mask=0.1, alpha=1, shots= -1,
     return args
 
 def reengineering(model, train_loader, test_loader, lr_mask, lr_head, n_epochs, 
-                  alpha, early_stop, acc_pre_model, config, args):
+                  alpha, early_stop, acc_pre_model, config, args, get_epochs):
     save_dir = f'{config.project_data_save_dir}/{args.model}_{args.dataset}/tc_{args.target_class}'
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -50,7 +50,8 @@ def reengineering(model, train_loader, test_loader, lr_mask, lr_head, n_epochs,
     reengineer = Reengineer(model, train_loader, test_loader, 
                             acc_pre_model=acc_pre_model)
     reengineered_model = reengineer.alter(lr_mask=lr_mask, lr_head=lr_head,
-                              n_epochs=n_epochs, alpha=alpha, early_stop=early_stop)
+                              n_epochs=n_epochs, alpha=alpha, get_epochs=get_epochs,
+                              early_stop=early_stop)
 
 
     masks = reengineered_model.get_masks()
@@ -99,7 +100,7 @@ def eval_pretrained_model(args, num_workers, pin_memory):
     return acc
 
 
-def main_func(args, num_workers, pin_memory,config):
+def main_func(args, num_workers, pin_memory,config,get_epochs):
     acc_pre_model = eval_pretrained_model(args, num_workers, pin_memory)
     print(f'\nPretrained Model Test Acc: {acc_pre_model:.2%}\n\n')
     # eval把输入的模型名和数据名拼成一个模型名
@@ -116,13 +117,13 @@ def main_func(args, num_workers, pin_memory,config):
 
     reengineering(model, train_loader, test_loader, args.lr_mask, args.lr_head,
                   args.n_epochs, args.alpha, args.early_stop, acc_pre_model,
-                  config,args)
+                  config,args,get_epochs=get_epochs)
 
     print(f'\nPretrained Model Test Acc: {acc_pre_model:.2%}\n\n')
 
 def run_model_reengineering_bc(model, dataset, target_class, lr_mask, alpha, 
-                            shots= -1, seed=0, n_epochs=300, lr_head=0.1, 
-                            early_stop=-1, tuning_param=False):
+                               n_epochs, shots= -1, seed=0, lr_head=0.1, 
+                            early_stop=-1, tuning_param=False,get_epochs="debug"):
     print(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
     print(torch.cuda.is_available())
 
@@ -135,7 +136,7 @@ def run_model_reengineering_bc(model, dataset, target_class, lr_mask, alpha,
     pin_memory = True
 
     # model_name = args.model
-    main_func(args,num_workers,pin_memory,config)
+    main_func(args,num_workers,pin_memory,config,get_epochs)
 
 
 # if __name__ == '__main__':

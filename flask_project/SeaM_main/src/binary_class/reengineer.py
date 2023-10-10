@@ -13,7 +13,7 @@ class Reengineer:
         self.acc_pre_model = acc_pre_model
         assert 0 < self.acc_pre_model <= 1
 
-    def alter(self, lr_mask, lr_head, n_epochs, alpha, early_stop=-1):
+    def alter(self, lr_mask, lr_head, n_epochs, alpha, get_epochs,early_stop=-1):
         reengineered_model = copy.deepcopy(self.pt_model)
 
         mask_params = []
@@ -58,6 +58,7 @@ class Reengineer:
                 print(f'\nEpoch {epoch}: Head & Mask')
                 print('-' * 80)
                 optim = optim_hm
+            get_epochs(epoch)
 
             reengineered_model = self._train(reengineered_model, optim, alpha)
             acc, loss, loss_pred, loss_weight_ratio = self._test(reengineered_model, alpha)
