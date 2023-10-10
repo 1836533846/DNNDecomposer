@@ -9,7 +9,9 @@ YourDir
 YourDir/
 data
 _pycache_
-flask_project\GradSplitter_main\data\
+image
+
+.flasksession/
 # Ignore logs
 *.log
 *.onnx

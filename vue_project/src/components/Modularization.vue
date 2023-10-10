@@ -120,24 +120,30 @@
               </el-form>
 
               <!-- Upload -->
-              <div style="width: 80%;margin-top: 40px;">
-                <el-button style="float:left;font-size: larger;margin-bottom: 10px;" type="success" @click="runModularization">
-                RUN</el-button>
-                <el-button style="float: left;font-size: larger;margin-bottom: 10px;" type="warning" @click="download"> 
+              <div style="width: 80%;margin-top: 40px;display: flex; flex-direction: row;flex-wrap: wrap;">
+                <el-button style="font-size: larger;margin-bottom: 10px; width: 150px; flex:0 auto;" type="success" 
+                  @click="runModularization">
+                Modularize</el-button>
+                <el-button style="font-size: larger;margin-bottom: 10px; width: 300px;flex:0 auto;" type="warning" 
+                  @click="download"> 
                 Download Process Model</el-button>
-                <el-button style="float: right;font-size: larger;margin-bottom: 10px;" type="primary" @click="JumpToDeployment"> 
+                <el-button v-if="algorithm==='SEAM'" style="justify-content:flex-end;margin-left:auto;font-size: larger;margin-bottom: 10px;flex:0 auto; width: 240px;" type="primary" @click="JumpToDeployment"> 
                 Module Deployment </el-button>
-                <el-button v-if="algorithm==='GradSplitter'" style="float: right;font-size: larger;margin-bottom: 10px;" type="success" @click="openReuse"> 
+                <el-button v-if="algorithm==='GradSplitter'" style="justify-content:flex-end;margin-left:auto;font-size: larger;margin-bottom: 10px;flex:0 auto;width: 240px;" type="primary" @click="openReuse"> 
                 Module Reuse </el-button>
               </div>
 
               <!-- Result -->
+              <div style="margin-top: 40px;">
+                <el-progress v-if="progressrunning" :percentage="progresspersentage" :color="progresscolor" :text-inside="true" :show-text="false" style="width: 80%; " text-color="white"></el-progress>
                 <el-input readonly resize="none"
                   type="textarea"
                   rows="7"
                   v-model="logs"
-                  style="width: 80%;margin-top: 40px;">
+                  style="width: 80%;margin-top: 10px;">
                 </el-input>
+                
+              </div>
               
               </div>
       </el-main>
@@ -239,7 +245,18 @@ created(){
     console.log('received message: ' + data);
     this.reuselogs += 'Message: ' + data + '\n';
   });
+  this.socket.on('get_progress_percentage', (data) => {
+    console.log('received progress data: ' + data);
+    this.progresspersentage = parseInt(JSON.stringify(data))
+  });
+  this.progressrunning = false
 },
+// beforeMount(){
+//   // this.progresspersentage = 0 //?
+// },
+// mounted(){
+//   this.timer = setInterval(this.updateProgress, 1500)
+// },
 beforeDestroy() {
     // 在组件销毁前，移除事件监听器并关闭socket连接
     this.socket.off('connect');
@@ -247,7 +264,11 @@ beforeDestroy() {
     this.socket.off('message');
     this.socket.off('reuse_result');
     this.socket.off('reuse_message');
+    this.socket.off('get_progress_percentage');
     this.socket.close();
+
+    //clear timer
+    // clearInterval(this.timer)
   },
 
 data() {
@@ -273,7 +294,9 @@ data() {
     message: '',
     modelStatus: '',
 
-
+    progresspersentage: 0, 
+    progresscolor: '#4db6ac',
+    progressrunning :false,
     socket: null,
     
     reuseMethod:'', // in Model Reuse [=More Accurate/For New Task]
@@ -374,12 +397,12 @@ methods: {
     const data = {
       modelFile: this.modelFile,
       datasetFile: this.datasetFile,
-      algorithm: this.algorithm,
-      epoch: this.epoch,
-      learningRate: this.learningRate,
+      algorithm: (this.algorithm).toString(),
+      epoch: (this.epoch).toString(),
+      learningRate: (this.learningRate).toString(),
       directModelReuse: this.directModelReuse,
       targetClass: this.targetClass,
-      alpha: this.alpha,
+      alpha: (this.alpha).toString(),
       targetSuperclassIdx: this.targetSuperclassIdx,
     };
     console.log(data)
@@ -393,7 +416,7 @@ methods: {
     sessionStorage.setItem("alpha", this.alpha);
     sessionStorage.setItem("targetSuperclassIdx", this.targetSuperclassIdx);
 
-
+    this.progressrunning = true
     // Send POST requests to Flask
     axios.post('http://localhost:5000/run_model', data)
       .then(response => {
@@ -412,8 +435,8 @@ methods: {
     const data = {
       modelFile: sessionStorage.getItem("modelFile"),
       datasetFile: sessionStorage.getItem("datasetFile"),
-      algorithm: this.algorithm,
-      epoch: this.epoch,
+      algorithm: (this.algorithm).toString(),
+      epoch: (this.epoch).toString(),
       reuseMethod: this.reuseMethod,
       cifarclass: this.cifarclass,
       svhnclass: this.svhnclass,
@@ -436,12 +459,12 @@ methods: {
     const data = {
       modelFile: this.modelFile,
       datasetFile: this.datasetFile,
-      algorithm: this.algorithm,
-      epoch: this.epoch,
-      learningRate: this.learningRate,
+      algorithm: (this.algorithm).toString(),
+      epoch: (this.epoch).toString(),
+      learningRate: (this.learningRate).toString(),
       directModelReuse: this.directModelReuse,
       targetClass: this.targetClass,
-      alpha: this.alpha,
+      alpha: (this.alpha).toString(),
       targetSuperclassIdx: this.targetSuperclassIdx,
     };
     axios.post('http://localhost:5000/download', data, {
@@ -476,6 +499,21 @@ methods: {
     console.log('modelFile:'+this.modelFile)
     console.log('datasetFile:'+this.datasetFile)
 
+  },
+  updateProgress(){
+    const data = 'getProgressPercentage'
+    axios.post('http://localhost:5000/get_modularize_progress', data)
+      .then(response => {
+        let progress_rcvd_str=response.data.progress
+        console.log('receive progress[str]:' + progress_rcvd_str + '%')
+        let progress_rcvd_num = parseInt(progress_rcvd_str)
+        console.log('receive progress[num]:' + progress_rcvd_num + '%')
+        this.$set(this.progresspersentage, progress_rcvd_num)
+        console.log(this.progresspersentage)
+      })
+      .catch(error => {
+        console.error(error);
+      });
   },
 },
 };
