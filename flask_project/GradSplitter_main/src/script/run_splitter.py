@@ -14,6 +14,7 @@ dataset = 'cifar10'
 #           f'--estimator_idx {estimator_idx} > {model}_{dataset}_estimator_{estimator_idx}.log'
 #     print(cmd)
 #     os.system(cmd)
-def run_splitter_script(model,dataset,estimator_indices=estimator_indices):
+def run_splitter_script(model,dataset,callback,estimator_indices=estimator_indices,get_epochs="debug"):
       for i, estimator_idx in enumerate(estimator_indices):
-            run_grad_splitter(model,dataset,estimator_idx)
+            run_grad_splitter(model=model,dataset=dataset,callback=callback,\
+                              estimator_idx=estimator_idx,get_epochs=get_epochs)

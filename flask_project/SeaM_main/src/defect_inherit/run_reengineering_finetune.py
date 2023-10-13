@@ -12,13 +12,13 @@ from SeaM_main.src.defect_inherit.finetuner import finetune
 from SeaM_main.src.defect_inherit.config import load_config
 
 def step_1(train_loader, test_loader, step_1_path, model_name, lr_output_layer_step_1,
-           momentum, weight_decay, n_epochs, early_stop):
+           momentum, weight_decay, n_epochs, early_stop,get_epochs):
     print('Step 1: Only finetune the output layer.')
 
-    if os.path.exists(step_1_path):
-        print(f'Loading {step_1_path}...')
-        model_ft_params = torch.load(step_1_path, map_location=torch.device('cuda'))
-        return model_ft_params
+    # if os.path.exists(step_1_path):
+    #     print(f'Loading {step_1_path}...')
+    #     model_ft_params = torch.load(step_1_path, map_location=torch.device('cuda'))
+    #     return model_ft_params
     num_classes = train_loader.dataset.num_classes
     model_pt = eval(model_name)(pretrained=True, num_classes=num_classes).to('cuda')
     output_layer = model_pt.fc
@@ -36,7 +36,7 @@ def step_1(train_loader, test_loader, step_1_path, model_name, lr_output_layer_s
     )
 
     model_ft, best_acc, best_epoch = finetune(model_pt, optim, train_loader, test_loader,
-                                              n_epochs=n_epochs, early_stop=early_stop)
+                                              n_epochs=n_epochs, early_stop=early_stop,get_epochs=get_epochs)
     model_ft_params = model_ft.state_dict()
     torch.save(model_ft_params, step_1_path)
     print()
@@ -50,7 +50,7 @@ def step_1(train_loader, test_loader, step_1_path, model_name, lr_output_layer_s
 
 
 def step_2(model_ft_params, train_loader, test_loader, step_2_path, model_name, lr_mask,
-           lr_output_layer_step_2, n_epochs, alpha, prune_threshold, early_stop):
+           lr_output_layer_step_2, n_epochs, alpha, prune_threshold, early_stop,get_epochs):
     print(f'Step 2: Reengineer the fine-tuned model obtained in Step 1')
 
     if os.path.exists(step_2_path):
@@ -67,14 +67,14 @@ def step_2(model_ft_params, train_loader, test_loader, step_2_path, model_name, 
     reengineer = Reengineer(model_to_reengineering, train_loader, test_loader)
     masks, output_layer = reengineer.alter(lr_mask=lr_mask, lr_output_layer=lr_output_layer_step_2,
                                             n_epochs=n_epochs, alpha=alpha, prune_threshold=prune_threshold,
-                                            early_stop=early_stop)
+                                            early_stop=early_stop,get_epochs=get_epochs)
     masks.update(output_layer)
     torch.save(masks, step_2_path)
     return masks
 
 
 def step_3(masks, train_loader, test_loader, model_name, dropout, lr_output_layer_step_3,
-           lr_hidden_layer, momentum, weight_decay, n_epochs, early_stop, step_3_path):
+           lr_hidden_layer, momentum, weight_decay, n_epochs, early_stop, step_3_path,get_epochs):
     print(f'Step 3: Finetune according to reengineering results.')
 
     num_classes = train_loader.dataset.num_classes
@@ -121,7 +121,7 @@ def step_3(masks, train_loader, test_loader, model_name, dropout, lr_output_laye
     print(model_pt)
 
     model_ft, best_acc, best_epoch = finetune(model_pt, optim, train_loader, test_loader,
-                                              n_epochs=n_epochs, early_stop=early_stop)
+                                              n_epochs=n_epochs, early_stop=early_stop,get_epochs=get_epochs)
     model_ft_params = model_ft.state_dict()
     torch.save(model_ft_params, step_3_path)
     print()
@@ -156,7 +156,7 @@ def get_args(model, dataset, n_epochs=300, dropout=0.0, lr_s1_output_layer=0.1,
 
 def reengineering_finetune(dataset_name,num_workers,pin_memory,model_name,step_1_path,step_2_path,step_3_path,
                            lr_output_layer_step_1,lr_output_layer_step_2,lr_output_layer_step_3,lr_hidden_layer,
-                           momentum,weight_decay,n_epochs,early_stop,lr_mask,prune_threshold,alpha,dropout):
+                           momentum,weight_decay,n_epochs,early_stop,lr_mask,prune_threshold,alpha,dropout,callback,get_epochs):
     dataset_train = load_dataset(dataset_name, is_train=True)
     dataset_test = load_dataset(dataset_name, is_train=False)
     train_loader = DataLoader(dataset_train, batch_size=64, shuffle=True, num_workers=num_workers,
@@ -164,25 +164,32 @@ def reengineering_finetune(dataset_name,num_workers,pin_memory,model_name,step_1
     test_loader = DataLoader(dataset_test, batch_size=64, shuffle=False, num_workers=num_workers, pin_memory=pin_memory)
 
     print(f'\n====== Start Step 1 ======\n')
+    # print(f"callback type:{type(callback)}")
+    if callback!="debug":
+        callback(step_1=step_1)
     model_ft_params,best_epoch_step1,best_acc_step1 = step_1(train_loader, test_loader, step_1_path, 
                                                              model_name, lr_output_layer_step_1,momentum, 
-                                                             weight_decay, n_epochs, early_stop)
+                                                             weight_decay, n_epochs, early_stop,get_epochs)
 
     print(f'\n====== Start Step 2 ======')
+    if callback!="debug":
+        callback(step_2=step_2)
     masks = step_2(model_ft_params, train_loader, test_loader, step_2_path, model_name, lr_mask,
-                    lr_output_layer_step_2, n_epochs, alpha, prune_threshold, early_stop)
+                    lr_output_layer_step_2, n_epochs, alpha, prune_threshold, early_stop,get_epochs)
 
     print(f'\n====== Start Step 3 ======\n')
+    if callback!="debug":
+        callback(step_3=step_3)
     best_epoch_step3, best_acc_step3 = step_3(masks, train_loader, test_loader, model_name, dropout, 
                                               lr_output_layer_step_3,lr_hidden_layer, momentum, 
-                                              weight_decay, n_epochs, early_stop, step_3_path)
+                                              weight_decay, n_epochs, early_stop, step_3_path,get_epochs)
     
     return best_epoch_step1,best_acc_step1,best_epoch_step3,best_acc_step3
 
 def run_reengineering_finetune(model, dataset, n_epochs=300, dropout=0.0, lr_s1_output_layer=0.1,
                                 lr_s2_output_layer=0.001, lr_mask=0.1, alpha=1, prune_threshold=1.0,
                                 lr_s3_output_layer=0.05, lr_s3_hidden_layer=0.005, momentum=0.0, 
-                                weight_decay=0.0001, early_stop=30, callback="debug"):
+                                weight_decay=0.0001, early_stop=30, callback="debug",get_epochs="debug"):
     
     args = get_args(model, dataset, n_epochs, dropout, lr_s1_output_layer,
                                 lr_s2_output_layer, lr_mask, alpha, prune_threshold,
@@ -236,9 +243,10 @@ def run_reengineering_finetune(model, dataset, n_epochs=300, dropout=0.0, lr_s1_
     best_epoch_step1,best_acc_step1,best_epoch_step3,best_acc_step3 = \
         reengineering_finetune(dataset_name,num_workers,pin_memory,model_name,step_1_path,step_2_path,step_3_path,
                            lr_output_layer_step_1,lr_output_layer_step_2,lr_output_layer_step_3,lr_hidden_layer,
-                           momentum,weight_decay,n_epochs,early_stop,lr_mask,prune_threshold,alpha,dropout)
+                           momentum,weight_decay,n_epochs,early_stop,lr_mask,prune_threshold,alpha,dropout,callback,get_epochs)
     
     if callback != "debug":
-        callback(best_epoch_step1,best_acc_step1,best_epoch_step3,best_acc_step3)
+        callback(best_epoch_step1=best_epoch_step1,best_acc_step1=best_epoch_step1,\
+                 best_epoch_step3=best_epoch_step3,best_acc_step3=best_acc_step3)
 
     return best_epoch_step1,best_acc_step1,best_epoch_step3,best_acc_step3

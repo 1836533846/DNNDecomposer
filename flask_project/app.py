@@ -32,6 +32,7 @@ import threading
 app = Flask(__name__)
 CORS(app,expose_headers=['Content-Disposition'])
 
+
 app.config['UPLOAD_FOLDER'] = 'uploads'
 # create a SocketIO instance
 socketio = SocketIO(app, cors_allowed_origins="*",\
@@ -54,18 +55,24 @@ def dir_convert(algorithm, direct_model_reuse, model_file, dataset_file,
         # This is the real data dir in project!!!!!!!!!!!!!!!!!
         # algorithm_path = f"{global_config_SeaM.data_dir}/flask_project"
         algorithm_path = "/data/bixh/ToolDemo_GS/SeaM_main/data"
-        file_name = f"lr_head_mask_{lr_head}_{lr_mask}_alpha_{alpha}.pth"
-        # algorithm_path = "flask_project/SeaM_main/data"
         if direct_model_reuse == "Binary Classification":
+            file_name = f"lr_head_mask_{lr_head}_{lr_mask}_alpha_{alpha}.pth"
             model_reuse_path = f"/binary_classification/{model_file}_{dataset_file}/tc_{target_class_str}/"
         elif direct_model_reuse == "Multi-Class Classification":
+            file_name = f"lr_head_mask_{lr_head}_{lr_mask}_alpha_{alpha}.pth"
             model_reuse_path = f"/multi_class_classification/{model_file}_{dataset_file}/tsc_{target_superclass_idx_str}/"
+        elif direct_model_reuse == "Defect Inheritance":
+            file_name = "step_3_seam_ft.pth"
+            model_reuse_path = f"/defect_inheritance/seam_ft/resnet18_mit67_dropout_0.0/lr_mask_{lr_mask}_alpha_{alpha}_thres_0.6/"
         return f"{algorithm_path}{model_reuse_path}",file_name
     # =====================================TO BE CONTINUED============================
     elif algorithm == "GradSplitter":
         # algorithm_path = f"{global_config_Grad.data_dir}"
         algorithm_path = "/data/bixh/ToolDemo_GS/GradSplitter_main/data"
-
+        model_reuse_path = f"/{model_file}_{dataset_file}/modules/estimator_1/"
+        file_name = "estimator_1.pth"
+        return f"{algorithm_path}{model_reuse_path}",file_name
+    
 @app.route('/benchmark', methods=['POST'])
 def benchmark():
     data = request.get_json()
@@ -76,7 +83,7 @@ def benchmark():
     learning_rate = float(data.get('learningRate'))
     direct_model_reuse = data.get('directModelReuse')
     target_class = 0
-    alpha = float(data.get('alpha'))
+    alpha = float(data.get('alpha')) if data.get('alpha') != '' else ''
     if algorithm=='SEAM':
         try:
             def callback(m_total_flop_dense, m_total_flop_sparse, 
@@ -115,8 +122,8 @@ def benchmark():
         try:
             def callback(best_modules,best_epoch,best_acc,best_avg_kernel):
                 socketio.emit('grad_result', f'Best Module: {best_modules}')
-                socketio.emit('grad_result', f'Best_epoch: {best_epoch}')
-                socketio.emit('grad_result', f'Best_acc: {best_acc * 100:.2f}%')
+                socketio.emit('grad_result', f'Best Epoch: {best_epoch}')
+                socketio.emit('grad_result', f'Best Acc: {best_acc * 100:.2f}%')
                 socketio.emit('grad_result', f'Best_avg_kernel: {best_avg_kernel:.2f}')
             def run():
                 socketio.emit('grad_message','\n Reengineering Model, Please Wait!!!')
@@ -140,7 +147,6 @@ def benchmark():
 
 
 def tc_legal(target_class_str):
-    # target_class_str判断合法+默认值
     if target_class_str is None or target_class_str.strip() == '':
         target_class = 0 
     else:
@@ -158,23 +164,38 @@ def run_model():
     model_file = data.get('modelFile')
     dataset_file = data.get('datasetFile')
     algorithm = data.get('algorithm')
-    epoch = data.get('epoch')
+    epoch = float(tc_legal(data.get("epoch")))
     learning_rate = float(data.get('learningRate'))
     direct_model_reuse = data.get('directModelReuse')
     target_class_str = data.get('targetClass')
     target_superclass_idx_str = data.get('targetSuperclassIdx')
-    alpha = float(tc_legal(data.get('alpha')))
+    alpha = float(data.get('alpha')) if data.get('alpha') != '' else ''
     target_class = tc_legal(target_class_str)
     target_superclass_idx = tc_legal(target_superclass_idx_str)
     if algorithm=='SEAM':
         try:
-            def callback(m_total_flop_dense, m_total_flop_sparse, 
-                        perc_sparse_dense, acc_reeng, acc_pre):
-                socketio.emit('model_result', f'FLOPs Dense: {m_total_flop_dense:.2f}M')
-                socketio.emit('model_result', f'FLOPs Sparse: {m_total_flop_sparse:.2f}M')
-                socketio.emit('model_result', f'FLOPs % (Sparse / Dense): {perc_sparse_dense:.2%}')
-                socketio.emit('model_result', f'Pretrained Model ACC: {acc_pre:.2%}')
-                socketio.emit('model_result', f'Reengineered Model ACC: {acc_reeng:.2%}')
+            def callback(**kwargs):
+                messages = {
+                    'm_total_flop_dense': 'FLOPs Dense: {:.2f}M',
+                    'm_total_flop_sparse': 'FLOPs Sparse: {:.2f}M',
+                    'perc_sparse_dense': 'FLOPs % (Sparse / Dense): {:.2%}',
+                    'acc_pre': 'Pretrained Model ACC: {:.2%}',
+                    'acc_reeng': 'Reengineered Model ACC: {:.2%}',
+                    # For Defect Inheritance reengineering
+                    'best_epoch_step1': 'Best epoch in step 1:{}',
+                    'best_acc_step1': 'Best acc in step 1:{:.2%}',
+                    'best_epoch_step3': 'Best epoch in step 3:{}',
+                    'best_acc_step3': 'Best acc in step 3:{:.2%}',
+                    # For evaluate robustness
+                    'clean_top1' : 'Clean Top-1: {:.2f}',
+                    'adv_sr': 'Attack Success Rate: {:.2f}',
+                    'step_1': 'Step 1:Finetuning the output layer......',
+                    'step_2': 'Step 2:Reengineering the fine-tuned model obtained in Step 1......',
+                    'step_3': 'Step 3:Finetune according to reengineering results......',
+                }
+                for key, message in messages.items():
+                    if key in kwargs:
+                        socketio.emit('model_result', message.format(kwargs[key]))
             def get_epochs(epoch,n_epoch=300):
                 epoch_percentage = (epoch/n_epoch)*100
                 socketio.emit('get_progress_percentage', epoch_percentage)
@@ -182,21 +203,21 @@ def run_model():
                 return epoch_percentage
             def run():
                 if direct_model_reuse=='Binary Classification':
-                    socketio.emit('message','\nReengineering Model, Please Wait!!!')
+                    socketio.emit('message','\n Reengineering Model, Please Wait!!!')
                     run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
                                     target_class=target_class,lr_mask=learning_rate, alpha=alpha, 
                                     n_epochs=300,get_epochs=get_epochs)
-                    socketio.emit('message','\nModel is ready, waiting for calculating flops......')
+                    socketio.emit('message','\n Model is ready, waiting for calculating flops......')
                     run_calculate_flop_bc(model=model_file, dataset=dataset_file, 
                                 target_class=target_class, lr_mask=learning_rate, alpha=alpha,
                                 callback=callback)
                     
                 elif direct_model_reuse=='Multi-Class Classification':
-                    socketio.emit('message','\nReengineering Model, Please Wait!!!')    
+                    socketio.emit('message','\n Reengineering Model, Please Wait!!!')  
                     run_model_reengineering_mc(model=model_file, dataset=dataset_file, 
                                 target_superclass_idx=target_superclass_idx,
-                                lr_mask=learning_rate, alpha=alpha, callback=callback)
-                    socketio.emit('message','\nModel is ready, waiting for calculating flops......')
+                                lr_mask=learning_rate, alpha=alpha, get_epochs=get_epochs)
+                    socketio.emit('message','\n Model is ready, waiting for calculating flops......')
                     run_calculate_flop_mc(model=model_file, dataset=dataset_file, 
                                 target_superclass_idx=target_superclass_idx, 
                                 lr_mask=learning_rate, alpha=alpha,callback=callback)
@@ -212,34 +233,45 @@ def run_model():
                     # 
                     # 4. Compute the defect inheritance rate of fine-tuned 
                     # original ResNet18-Scenes.
-                    run_reengineering_finetune(model=model_file, dataset=model_file,
-                           lr_mask=0.05, alpha=0.5, prune_threshold=0.6)
-                    run_eval_robustness(model=model_file, dataset=model_file, 
-                            eval_method="seam", lr_mask=0.05, alpha=0.5, prune_threshold=0.6)
-                    run_standard_finetune(model=model_file, dataset=model_file)
-                    run_eval_robustness(model=model_file, dataset=model_file, eval_method="standard")
-                        
+                    socketio.emit('message','\n ## Reengineering model...... ##')
+                    socketio.emit('message','\n ## Process might be stopped before 100% when it fits the target! ##')
+                    run_reengineering_finetune(model=model_file, dataset=dataset_file,
+                           lr_mask=0.05, alpha=0.5, prune_threshold=0.6, callback=callback,get_epochs=get_epochs)
+                    socketio.emit('message','\n ## Evaluating robustness...... ##')
+                    run_eval_robustness(model=model_file, dataset=dataset_file, 
+                            eval_method="seam", lr_mask=0.05, alpha=0.5, prune_threshold=0.6,callback=callback)
+                    socketio.emit('message','\n ## Start Fine-tuning. ##')
+                    run_standard_finetune(model=model_file, dataset=dataset_file)
+                    socketio.emit('message','\n ## Finish Fine-tuning. ##')
+                    socketio.emit('message','\n ## Evaluating robustness...... ##')
+                    run_eval_robustness(model=model_file, dataset=dataset_file, eval_method="standard")
+                    socketio.emit('message','\n ## Evaluate Done! ##')
                 else:
                     print("Model reuse type error!!")
                     return ValueError
             # start a new thread to run the model
             threading.Thread(target=run).start()
-            return {'logs': "Model is decomposing......", 'isModelReady': True}, 200
+            return {'logs': "Model is reengineering......\n", 'isModelReady': True}, 200
         except Exception as e:
             return {'logs': str(e), 'isModelReady': False}, 500
     elif algorithm=='GradSplitter':
         try:
             def callback(best_modules,best_epoch,best_acc,best_avg_kernel):
                 socketio.emit('model_result', f'Best Module: {best_modules}')
-                socketio.emit('model_result', f'Best_epoch: {best_epoch}')
-                socketio.emit('model_result', f'Best_acc: {best_acc * 100:.2f}%')
-                socketio.emit('model_result', f'Best_avg_kernel: {best_avg_kernel:.2f}')
+                socketio.emit('model_result', f'Best Epoch: {best_epoch}')
+                socketio.emit('model_result', f'Best Acc: {best_acc * 100:.2f}%')
+                socketio.emit('model_result', f'Best Averag Kernel: {best_avg_kernel:.2f}')
+            def get_epochs(epoch,n_epoch=145):
+                epoch_percentage = (epoch/n_epoch)*100
+                socketio.emit('get_progress_percentage', epoch_percentage)
+                print(f"Epoch percentage:{epoch_percentage:.2f}%")
+                return epoch_percentage
             def run():
                 socketio.emit('message','\n Reengineering Model, Please Wait!!!')
-                # run_splitter_script(model=model_file,dataset=dataset_file)
+                run_splitter_script(model=model_file,dataset=dataset_file,callback=callback, get_epochs=get_epochs)
                 socketio.emit('message','\n Reengineering Done!')
                 socketio.emit('message','\n Selecting Modules, Please Wait!!!')
-                # run_select_modules_script(model=model_file,dataset=dataset_file)
+                run_select_modules_script(model=model_file,dataset=dataset_file)
                 socketio.emit('message','\n Modules Selected!!!')
             threading.Thread(target=run).start()
             return {'logs': "Model run successfully", 'isModelReady': True}, 200
@@ -286,29 +318,7 @@ def run_reuse():
         except Exception as e:
             return {'reuse_message': str(e), 'isModelReady': False}, 500
     return
-
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-    if file:
-        filename = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-        file.save(filename)
-        
-        # 进行推理
-        result = deployment_reasoning(filename)
-        
-        return jsonify({'result': result})
-    
-def deployment_reasoning():
-    
-    return
-
 # Download module
-# Requires parameters
 @app.route('/download', methods=['POST'])
 def download_file():
     data = request.get_json()
@@ -321,21 +331,15 @@ def download_file():
     direct_model_reuse = data.get('directModelReuse')
     target_class_str = data.get('targetClass')
     target_superclass_idx_str = data.get('targetSuperclassIdx')
-    alpha = float(tc_legal(data.get('alpha')))
+    alpha = float(data.get('alpha')) if data.get('alpha') != '' else ''
     target_class = tc_legal(target_class_str)
     target_superclass_idx = tc_legal(target_superclass_idx_str)
-
     try:
         directory,filename = dir_convert(algorithm=algorithm, direct_model_reuse=direct_model_reuse, \
                                    model_file=model_file, dataset_file=dataset_file,target_class_str=target_class, \
                                    target_superclass_idx_str=target_class,lr_mask=learning_rate,alpha=alpha)
-        print(directory)
-        print(filename)
-        # directory,filename = dir_convert(algorithm="SEAM", direct_model_reuse="Binary Classification", \
-        #                            model_file="vgg16", dataset_file="cifar10",target_class_str="0", \
-        #                            target_superclass_idx_str="0",lr_mask="0.01",alpha=1)
-        # directory = '/data/bixh/ToolDemo_GS/SeaM_main/data/binary_classification/vgg16_cifar10/tc_0'
-        # filename = "lr_head_mask_0.1_0.01_alpha_1.0.pth"
+        # print(directory)
+        # print(filename)
         print(f"Attempting to send from directory: {directory}, filename: {filename}")  # Debug line
         response = send_from_directory(directory, filename, as_attachment=True)
         response.headers["content-disposition"] = filename

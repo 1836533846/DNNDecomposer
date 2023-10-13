@@ -14,7 +14,7 @@ class Reengineer:
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
 
-    def alter(self, lr_mask, lr_output_layer, n_epochs, alpha, prune_threshold, early_stop=-1):
+    def alter(self, lr_mask, lr_output_layer, n_epochs, alpha, prune_threshold, early_stop=-1,get_epochs="debug"):
         reengineered_model = copy.deepcopy(self.pt_model)
 
         mask_params = []
@@ -42,6 +42,7 @@ class Reengineer:
 
         for epoch in range(n_epochs):
             print(f'\nEpoch {epoch}')
+            get_epochs(epoch,n_epochs)
             print('-' * 80)
             reengineered_model = self._train(reengineered_model, optim, alpha)
             acc, loss, loss_pred, loss_weight_ratio = self._test(reengineered_model, alpha)

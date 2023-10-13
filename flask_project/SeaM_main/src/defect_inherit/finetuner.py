@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 
 
-def finetune(model, optim, train_loader, test_loader, n_epochs, early_stop=-1):
+def finetune(model, optim, train_loader, test_loader, n_epochs, early_stop=-1,get_epochs="debug"):
     best_epoch = 0
     best_acc = 0.0
     best_model = None
@@ -12,6 +12,7 @@ def finetune(model, optim, train_loader, test_loader, n_epochs, early_stop=-1):
 
     for epoch in range(n_epochs):
         print(f'\nEpoch {epoch}')
+        get_epochs(epoch,n_epochs)
         print('-' * 80)
         model.train()
         predicts, labels = [], []

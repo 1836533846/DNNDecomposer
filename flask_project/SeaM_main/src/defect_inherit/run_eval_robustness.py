@@ -45,25 +45,6 @@ def adversary_test(model, loader, adversary):
 def myloss(yhat, y):
     return -((yhat[:, 0] - y[:, 0]) ** 2 + 0.1 * ((yhat[:, 1:] - y[:, 1:]) ** 2).mean(1)).mean()
 
-
-# def get_args():
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('--model', type=str, choices=['resnet18', 'resnet50'], required=True)
-#     parser.add_argument('--dataset', type=str,
-#                         choices=['cub200', 'dog120', 'flower102', 'mit67', 'action40'], required=True)
-
-#     parser.add_argument('--dropout', type=float, default=0.0)
-#     parser.add_argument('--eval_method', type=str, choices=['seam', 'remos', 'standard', 'retrain'], required=True)
-
-#     # just for seam_finetune
-#     parser.add_argument('--lr_mask', type=float, default=0.0,
-#                         help='learning rate for optimizing the mask in step 2.')
-#     parser.add_argument('--alpha', type=float, default=0.0,
-#                         help='the weight for the weighted sum of two losses in re-engineering.')
-#     parser.add_argument('--prune_threshold', type=float, default=1.0)
-#     args = parser.parse_args()
-#     return args
-
 def get_args(model, dataset, eval_method, dropout=0.0, lr_mask=0.0, alpha=0.0, prune_threshold=1.0):
     args = argparse.Namespace()
     args.model = str(model)
@@ -76,7 +57,8 @@ def get_args(model, dataset, eval_method, dropout=0.0, lr_mask=0.0, alpha=0.0, p
     
     return args
 
-def run_eval_robustness(model, dataset, eval_method, dropout=0.0, lr_mask=0.0, alpha=0.0, prune_threshold=1.0):
+def run_eval_robustness(model, dataset, eval_method, dropout=0.0, lr_mask=0.0, alpha=0.0, \
+                        prune_threshold=1.0, callback="debug"):
     args = get_args(model, dataset, eval_method, dropout, lr_mask, alpha, prune_threshold)
     configs = load_config()
     num_workers = 8
@@ -111,5 +93,6 @@ def run_eval_robustness(model, dataset, eval_method, dropout=0.0, lr_mask=0.0, a
         targeted=False)
 
     clean_top1, _, adv_sr = adversary_test(model_ft, test_loader, attacker)
-
+    if callback != "debug":
+        callback(clean_top1=clean_top1, adv_sr=adv_sr)
     print('Clean Top-1: {:.2f} | Attack Success Rate: {:.2f}'.format(clean_top1, adv_sr))

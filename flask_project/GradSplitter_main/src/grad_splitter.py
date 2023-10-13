@@ -22,7 +22,7 @@ def loss_func(predicts, label, grad_splitter):
 
 def modularize(model, train_dataset, val_dataset, test_dataset, save_dir,\
                init_type, GradSplitter, epochs_for_head, epochs_for_modularity,\
-                lr_head, iterative_strategy, lr_modularity, alpha, device):
+                lr_head, iterative_strategy, lr_modularity, alpha, device,get_epochs):
     grad_splitter = GradSplitter(model, init_type)
 
     acc_log = []
@@ -46,6 +46,7 @@ def modularize(model, train_dataset, val_dataset, test_dataset, save_dir,\
                 print('\n*** Modularize ***\n')
                 optimize = torch.optim.Adam(all_param, lr=lr_modularity)
                 ratio_loss_sim = alpha
+        get_epochs(epoch,epochs_for_head + epochs_for_modularity)
 
         print(f'epoch {epoch}')
         print('-' * 80)
@@ -143,7 +144,7 @@ def eval_splitter(grad_splitter, test_dataset, device, attr='val'):
 def main_func(args, configs, model_name, dataset_name, dataset_dir, trained_model_path,\
               batch_size, estimator_idx, module_save_dir, device,\
               epochs_for_head, epochs_for_modularity, iterative_strategy,\
-              GradSplitter  ):
+              GradSplitter,get_epochs):
     model = load_model(model_name, configs.num_classes)
     model.load_state_dict(torch.load(trained_model_path, map_location=device))
     model = model.to(device)
@@ -165,7 +166,7 @@ def main_func(args, configs, model_name, dataset_name, dataset_dir, trained_mode
     best_modules,best_epoch,best_acc,best_avg_kernel = modularize(model, \
                 modularity_train_loader, modularity_val_loader, test_dataset, \
                module_save_dir, init_type, GradSplitter, epochs_for_head, epochs_for_modularity,\
-                lr_head, iterative_strategy, lr_modularity, alpha, device)
+                lr_head, iterative_strategy, lr_modularity, alpha, device,get_epochs=get_epochs)
     return best_modules,best_epoch,best_acc,best_avg_kernel
 def get_args(model,dataset,estimator_idx,init_type,lr_head=0.01,\
             lr_modularity=0.001,epoch_strategy='5,140',\
@@ -185,7 +186,7 @@ def get_args(model,dataset,estimator_idx,init_type,lr_head=0.01,\
 
 def run_grad_splitter(model,dataset,estimator_idx,init_type='ones',lr_head=0.01,\
             lr_modularity=0.001,epoch_strategy='5,140',\
-            batch_size=64,alpha=0.1,callback="debug"):
+            batch_size=64,alpha=0.1,callback="debug",get_epochs="debug"):
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     torch.random.manual_seed(1)
@@ -218,7 +219,7 @@ def run_grad_splitter(model,dataset,estimator_idx,init_type='ones',lr_head=0.01,
             configs, model_name, dataset_name, dataset_dir, trained_model_path,\
             batch_size, estimator_idx, module_save_dir, device,\
             epochs_for_head, epochs_for_modularity, iterative_strategy,\
-            GradSplitter)
+            GradSplitter,get_epochs=get_epochs)
     
     if callback!="debug":
         callback(best_modules,best_epoch,best_acc,best_avg_kernel)

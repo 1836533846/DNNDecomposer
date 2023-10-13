@@ -14,27 +14,6 @@ from SeaM_main.src.multi_class.models.resnet20 import cifar100_resnet20 as resne
 from SeaM_main.src.multi_class.models.resnet50 import resnet50
 from tqdm import tqdm
 
-# def get_args():
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('--model', type=str, choices=['resnet20', 'resnet50'], required=True)
-#     parser.add_argument('--dataset', type=str, choices=['cifar100', 'imagenet'], required=True)
-#     parser.add_argument('--superclass_type', type=str, choices=['predefined', 'random'], default='predefined')
-#     parser.add_argument('--target_superclass_idx', type=int, default=-1)
-#     parser.add_argument('--n_classes', type=int, default=-1,
-#                         help='When randomly construct superclasses, how many classes dose a reengineered model recognize.')
-#     parser.add_argument('--shots', default=-1, type=int, help='how many samples for each classes.')
-#     parser.add_argument('--seed', type=int, default=0,
-#                         help='the random seed for sampling ``num_superclasses'' classes as target classes.')
-#     parser.add_argument('--n_epochs', type=int, default=300)
-
-#     parser.add_argument('--lr_head', type=float, default=0.1)
-#     parser.add_argument('--lr_mask', type=float, default=0.1)
-#     parser.add_argument('--alpha', type=float, default=1,
-#                         help='the weight for the weighted sum of two losses in re-engineering.')
-#     parser.add_argument('--early_stop', type=int, default=-1)
-#     args = parser.parse_args()
-#     return args
-
 def get_args(model, dataset, superclass_type='predefined', target_superclass_idx=-1, 
              n_classes=-1, shots= -1, seed=0, n_epochs=300, lr_head=0.1, lr_mask=0.1, 
              alpha=1, early_stop=-1):
@@ -55,11 +34,11 @@ def get_args(model, dataset, superclass_type='predefined', target_superclass_idx
     return args
 
 def reengineering(model, train_loader, test_loader, lr_mask, lr_head, 
-                  n_epochs, alpha, early_stop, save_path, acc_pre_model):
+                  n_epochs, alpha, early_stop, save_path, acc_pre_model, get_epochs):
 
     reengineer = Reengineer(model, train_loader, test_loader, acc_pre_model)
     reengineered_model = reengineer.alter(lr_mask=lr_mask, lr_head=lr_head,
-                               n_epochs=n_epochs, alpha=alpha, early_stop=early_stop)
+                               n_epochs=n_epochs, alpha=alpha, get_epochs=get_epochs, early_stop=early_stop)
 
     masks = reengineered_model.get_masks()
     module_head = reengineered_model.get_module_head()
@@ -103,7 +82,7 @@ def eval_pretrained_model(args,num_workers,pin_memory):
     return acc
 
 
-def main_func(args,num_workers,pin_memory,config):
+def main_func(args,num_workers,pin_memory,config,get_epochs):
     if args.model == 'resnet20':
         assert args.dataset == 'cifar100'
     elif args.model == 'resnet50':
@@ -154,7 +133,7 @@ def main_func(args,num_workers,pin_memory,config):
     s_time = time.time()
     reengineering(model, train_loader, test_loader,
                   args.lr_mask, args.lr_head, args.n_epochs, args.alpha, args.early_stop,
-                  save_path, acc_pre_model)
+                  save_path, acc_pre_model, get_epochs=get_epochs)
     e_time = time.time()
     print(f'Time Elapse: {(e_time - s_time)/60:.1f} min\n')
 
@@ -164,7 +143,7 @@ def main_func(args,num_workers,pin_memory,config):
 def run_model_reengineering_mc(model, dataset, superclass_type='predefined', 
                             target_superclass_idx=-1, n_classes=-1, shots= -1, 
                             seed=0, n_epochs=300, lr_head=0.1, lr_mask=0.1, 
-                            alpha=1, early_stop=-1):
+                            alpha=1, early_stop=-1, get_epochs="debug"):
     print(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
     print(torch.cuda.is_available())
     args = get_args(model, dataset, superclass_type, target_superclass_idx, 
@@ -175,7 +154,7 @@ def run_model_reengineering_mc(model, dataset, superclass_type='predefined',
     num_workers = 16
     pin_memory = True
     # model_name = args.model
-    main_func(args,num_workers,pin_memory,config)
+    main_func(args,num_workers,pin_memory,config,get_epochs)
     
 # if __name__ == '__main__':
 #     args = get_args()
