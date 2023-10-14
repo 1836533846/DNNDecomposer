@@ -14,29 +14,11 @@
           <div class="form-body" style="margin-left: 20%;margin-right: 10%;">
               <el-form  label-width="220px" label-position="left" 
               ref="form" :model="form" id="selectForm" :inline="true" >
-                  <!-- Model Selection-->
-                  <el-form-item label="Model File:" class="selectItem" style="width: 100%;">
-                    <el-select v-model="modelFile" placeholder="Please select a model" @change="ResetAll">
-                        <el-option  v-for="item in wholeModelFileOptions" 
-                          :key="item.value" :label="item.label" :value="item.value">
-                          </el-option>
-                      </el-select>
-                  </el-form-item>
-
-                  <!-- Dataset Selection -->
-                  <el-form-item label="Dataset File:" class="selectItem" style="width: 100%;">
-                    <el-select v-model="datasetFile" placeholder="Please select a dataset" @change="AlgorithSelectHelper">
-                        <el-option  v-for="item in wholeDatasetFileOptions" 
-                        :key="item.value" :label="item.label" :value="item.value">
-                          </el-option>
-                      </el-select>
-                  </el-form-item>    
-              
                   <!-- Algorithm Select-->
-                  <el-form-item v-if="datasetFile!=null && modelFile!=null" label="Algorithm:" class="selectItem" style="width: 100%;"> 
-                      <el-select v-model="algorithm" placeholder="Please select an algorithm" >
-                          <el-option label="SeaM" value="SEAM" :disabled="selectDisabled.SEAM">  </el-option>
-                          <el-option label="GradSplitter" value="GradSplitter" :disabled="selectDisabled.GradSplitter">  </el-option>
+                  <el-form-item label="Algorithm:" class="selectItem" style="width: 100%;"> 
+                      <el-select v-model="algorithm" placeholder="Please select an algorithm" @change="ResetModelandDataset">
+                          <el-option label="SeaM" value="SEAM">  </el-option>
+                          <el-option label="GradSplitter" value="GradSplitter">  </el-option>
                       </el-select>
                   </el-form-item>
                   
@@ -49,9 +31,9 @@
                             <el-card style="width: 90%;height: 120px;" :body-style="{ padding: '0px 20px' } " 
                             :shadow="(directModelReuse === 'Multi-Class Classification' || directModelReuse === 'Binary Classification' )? 'always' : 'hover'">
                             <p style="font-weight: bolder;margin-top: 0;margin-bottom:15px;color:#606266;">Direct Model Reuse</p>
-                            <el-radio-group v-model="directModelReuse" @change="settargetIdxOptions">
-                              <el-radio label="Binary Classification" size="medium" style="margin-bottom: 15px;" :disabled="selectDisabled.binary"> Binary Classification</el-radio>
-                              <el-radio label="Multi-Class Classification" size="medium" style="margin-bottom: 15px;" :disabled="selectDisabled.multi"> Multi-Class Classification</el-radio>
+                            <el-radio-group v-model="directModelReuse" @change="ResetModelandDataset">
+                              <el-radio label="Binary Classification" size="medium" style="margin-bottom: 15px;"> Binary Classification</el-radio>
+                              <el-radio label="Multi-Class Classification" size="medium" style="margin-bottom: 15px;"> Multi-Class Classification</el-radio>
                             </el-radio-group>
 
                             </el-card>
@@ -60,8 +42,8 @@
                             <el-card style="width: 90%;height: 120px;" :body-style="{ padding: '0px 20px' }"  
                             :shadow="(this.directModelReuse === 'Defect Inheritance')? 'always' : 'hover'">
                             <p style="font-weight: bolder;margin-top: 0;margin-bottom:15px;color:#606266">Indirect Model Reuse</p>
-                            <el-radio-group v-model="directModelReuse">
-                              <el-radio label="Defect Inheritance" size="medium" style="margin-bottom: 15px;" :disabled="selectDisabled.defect">Defect Inheritance</el-radio>
+                            <el-radio-group v-model="directModelReuse" @change="ResetModelandDataset">
+                              <el-radio label="Defect Inheritance" size="medium" style="margin-bottom: 15px;">Defect Inheritance</el-radio>
                             </el-radio-group>
                             </el-card>
                           </div></el-col>
@@ -72,10 +54,10 @@
                   <!-- targetSuperclassIdx(SEAM+Multi-Class Classification ONLY) -->
                   <el-form-item v-if="algorithm === 'SEAM' && directModelReuse === 'Multi-Class Classification'" 
                   label="Target Superclass Idx:" class="selectItem" style="width: 100%;"> 
-                      <el-select v-model="targetSuperclassIdx" class="selectLong"
-                      placeholder="Please select a target superclass index" >
+                      <el-select v-model="targetSuperclassIdx" 
+                      placeholder="Please select a target superclass index">
                           <el-option  v-for="item in targetSuperclassIdxOptions" 
-                          :key="item.value" :label="item.label" :value="item.value" :disabled = "item.disable">
+                          :key="item.value" :label="item.label" :value="item.value">
                           </el-option>
                       </el-select>
                   </el-form-item>
@@ -115,7 +97,25 @@
                   </el-form-item>
               
 
-                  
+                  <!-- Model Selection-->
+                  <el-form-item label="Model File:" class="selectItem" style="width: 100%;">
+                    <el-select v-model="modelFile"
+                      :disabled="modelFileUploadMode === '0' || algorithm === ''" placeholder="Please select a model">
+                        <el-option  v-for="item in modelFileOptionsForMultiClass" 
+                          :key="item.value" :label="item.label" :value="item.value">
+                          </el-option>
+                      </el-select>
+                  </el-form-item>
+
+                  <!-- Dataset Selection -->
+                  <el-form-item label="Dataset File:" class="selectItem" style="width: 100%;">
+                    <el-select v-model="datasetFile"
+                      :disabled="datasetFileUploadMode === '0'|| algorithm === ''" placeholder="Please select a dataset">
+                        <el-option  v-for="item in datasetFileOptionsForMultiClass" 
+                        :key="item.value" :label="item.label" :value="item.value">
+                          </el-option>
+                      </el-select>
+                  </el-form-item>
 
               </el-form>
 
@@ -198,6 +198,26 @@ import axios from 'axios';
 import io from 'socket.io-client';
 export default {
 created(){
+  // var modelFile = sessionStorage.getItem("modelFile");
+  // var datasetFile = sessionStorage.getItem("datasetFile");
+  // var algorithm = sessionStorage.getItem("algorithm");
+  // var epoch = sessionStorage.getItem("epoch");
+  // var learningRate = sessionStorage.getItem("learningRate");
+  // var directModelReuse = sessionStorage.getItem("directModelReuse");
+  // var targetClass = sessionStorage.getItem("targetClass");
+  // var alpha = sessionStorage.getItem("alpha");
+  // var targetSuperclassIdx = sessionStorage.getItem("targetSuperclassIdx");
+
+  // if(modelFile == "null"){this.modelFile = modelFile}
+  // if(datasetFile!="null"){this.datasetFile = datasetFile}
+  // if(algorithm!="null"){this.algorithm = algorithm}
+  // // this.epoch = epoch
+  // // this.learningRate = learningRate
+  // this.directModelReuse = directModelReuse
+  // this.targetClass = targetClass
+  // this.alpha = alpha
+  // this.targetSuperclassIdx = targetSuperclassIdx
+
   // 初始化socket连接
   this.socket = io('http://localhost:5000/');
 
@@ -225,20 +245,15 @@ created(){
     console.log('received message: ' + data);
     this.reuselogs += 'Message: ' + data + '\n';
   });
-  this.socket.on('get_progress_percentage', (data) => {
-    console.log('received progress data: ' + data);
-    this.progresspersentage = parseInt(JSON.stringify(data))
-    // let progress_rcvd_num = parseInt(JSON.stringify(data))
-    // this.$set(this.progresspersentage, progress_rcvd_num)
-  });
+
   this.progressrunning = false
 },
-// beforeMount(){
-//   // this.progresspersentage = 0 //?
-// },
-// mounted(){
-//   this.timer = setInterval(this.updateProgress, 1500)
-// },
+beforeMount(){
+  // this.progresspersentage = 0 //?
+},
+mounted(){
+  this.timer = setInterval(this.updateProgress, 1500)
+},
 beforeDestroy() {
     // 在组件销毁前，移除事件监听器并关闭socket连接
     this.socket.off('connect');
@@ -246,19 +261,14 @@ beforeDestroy() {
     this.socket.off('message');
     this.socket.off('reuse_result');
     this.socket.off('reuse_message');
-    this.socket.off('get_progress_percentage');
     this.socket.close();
 
     //clear timer
-    // clearInterval(this.timer)
+    clearInterval(this.timer)
   },
 
 data() {
   return {
-    selectDisabled:{
-      SEAM: false, GradSplitter: false,
-      binary:false, multi:false, defect:false,
-    },
     form:{},reuseDialogForm:{},
     REUSEdialogVisible: false,
     activeTab: 'modularization',  // Currently active tab
@@ -297,109 +307,18 @@ data() {
       {value:"5", label:"5"},{value:"6", label:"6"},{value:"7", label:"7"},{value:"8", label:"8"},{value:"9", label:"9"},
     ],
     cifarclasses:[
-      {value:"0", label:"0 - Airplane"},{value:"1", label:"1 - Automobile"},
-      {value:"2", label:"2 - Bird"},{value:"3", label:"3 - Cat"},
-      {value:"4", label:"4 - Deer"},{value:"5", label:"5 - Dog"},
-      {value:"6", label:"6 - Frog"},{value:"7", label:"7 - Horse"},
-      {value:"8", label:"8 - Ship"},{value:"9", label:"9 - Truck"},
+      {value:"0", label:"0"},{value:"1", label:"1"},{value:"2", label:"2"},{value:"3", label:"3"},{value:"4", label:"4"},
+      {value:"5", label:"5"},{value:"6", label:"6"},{value:"7", label:"7"},{value:"8", label:"8"},{value:"9", label:"9"},
     ],
     svhnclasses:[
-      {value:"0", label:" Number 0"},{value:"1", label:" Number 1"},{value:"2", label:" Number 2"},{value:"3", label:" Number 3"},{value:"4", label:" Number 4"},
-      {value:"5", label:" Number 5"},{value:"6", label:" Number 6"},{value:"7", label:" Number 7"},{value:"8", label:" Number 8"},{value:"9", label:" Number 9"},
+      {value:"0", label:"0"},{value:"1", label:"1"},{value:"2", label:"2"},{value:"3", label:"3"},{value:"4", label:"4"},
+      {value:"5", label:"5"},{value:"6", label:"6"},{value:"7", label:"7"},{value:"8", label:"8"},{value:"9", label:"9"},
     ],
   };
 },
 
 
 computed: {
-  
-  wholeModelFileOptions(){
-    return [{value:'vgg16', label:'VGG16'},
-        {value:'resnet20', label:'ResNet20'},
-        {value:'resnet50', label:'ResNet50'},
-        {value:'resnet18', label:'ResNet18'},
-        {value:'simcnn', label:'SimCNN'}, {value:'rescnn', label:'ResCNN'}, {value:'incecnn', label:'InceCNN'}
-        ]
-  },
-  wholeDatasetFileOptions(){
-    switch(this.modelFile){
-        case 'vgg16':
-          return[{value:'cifar10', label:'CIFAR-10'}, {value:'cifar100', label:'CIFAR-100'}]
-        case 'resnet20':
-          return[{value:'cifar10', label:'CIFAR-10'}, {value:'cifar100', label:'CIFAR-100'}]
-        case 'resnet50':
-          return [{value:'ImageNet', label:'ImageNet'}]
-        case 'resnet18':
-          return [{value:'mit67', label:'MIT67'}] 
-        default:
-          return [{value:'cifar10', label:'CIFAR-10'}, {value:'svhn', label:'SVHN'}] 
-    }
-  },
-  AlgorithSelectHelper(){
-    /* *
-    * input: model, dataset
-    * output: this.algorithm
-    * ATTENTION: this.$set(this.algorithm, xxx)
-    * */
-   let that = this
-   if(this.modelFile === 'vgg16' && this.datasetFile!=null){
-    console.log(this.modelFile)
-    console.log(this.datasetFile)
-      this.algorithm= 'SEAM'
-      this.selectDisabled.GradSplitter = true
-      this.selectDisabled.multi = true
-      this.selectDisabled.defect = true
-      this.directModelReuse = 'Binary Classification'
-      that.settargetIdxOptions()
-      this.learningRate = 0.01
-      this.alpha = 1
-   }
-   if (this.modelFile === 'resnet20'){
-      if(this.datasetFile === 'cifar10'){
-        this.algorithm= 'SEAM'
-        this.selectDisabled.GradSplitter = true
-        this.selectDisabled.multi = true
-        this.selectDisabled.defect = true
-        this.directModelReuse = 'Binary Classification'
-        that.settargetIdxOptions()
-        this.learningRate = 0.01
-        this.alpha = 1
-      }
-      else if(this.datasetFile === 'cifar100'){
-        this.algorithm= 'SEAM'
-        this.directModelReuse = ''
-        this.selectDisabled.GradSplitter = true
-        this.selectDisabled.defect = true 
-        this.selectDisabled.multi = false
-        this.selectDisabled.binary = false
-        this.learningRate = 0.01
-        this.alpha = 1
-      }
-   }
-   if(this.modelFile === 'resnet50' && this.datasetFile === 'ImageNet'){
-      this.algorithm= 'SEAM'
-      this.selectDisabled.GradSplitter = true
-      this.selectDisabled.binary = true
-      this.selectDisabled.defect = true
-      this.directModelReuse = 'Multi-Class Classification'
-      that.settargetIdxOptions()
-      this.learningRate = 0.01
-      this.alpha = 1
-   }
-   if(this.modelFile === 'resnet18' && this.datasetFile === 'mit67'){
-      this.algorithm= 'SEAM'
-      this.selectDisabled.GradSplitter = true
-      this.selectDisabled.binary = true
-      this.selectDisabled.multi = true
-      this.directModelReuse = 'Defect Inheritance'
-      this.learningRate = 0.05
-      this.alpha = 0.5
-   }
-   if((this.modelFile === 'simcnn' || this.modelFile === 'rescnn' || this.modelFile === 'incecnn') && this.datasetFile != null){
-      this.algorithm ='GradSplitter'
-      this.selectDisabled.SEAM = true
-  }
-  },
   // To make sure multi-class has the two model
   modelFileOptionsForMultiClass() {
     switch(this.directModelReuse){
@@ -459,176 +378,7 @@ methods: {
     if(this.datasetFileUploadMode === '1' ){this.datasetFile = null;};
     if(this.modelFileUploadMode === '1'){this.modelFile = null}
   },
-  ResetAll(){
-    this.datasetFile = null
-    this.algorithm = ''
-    this.selectDisabled = {SEAM: false, GradSplitter: false, binary:false, multi:false, defect:false,}
-    this.directModelReuse = ''
-    this.learningRate = 0.01
-    this.alpha = 1
-  },
-  settargetIdxOptions(){
-    if(this.directModelReuse === 'Multi-Class Classification'){
-      if(this.datasetFile === 'ImageNet'){
-        console.log('set targetSUPERclass for ImageNet')
-        this.targetSuperclassIdxOptions = [
-          {value:"0", label:"0 - fish(3 classes: tench, goldfish, crampfish)"},
-          {value:"1", label:"1 - shark(2 classes: white shark, tiger shark)"},
-          {value:"2", label:"2 - bird(5 classes: cock, hen, ostrich, brambling, goldfinch)"},
-          {value:"3", label:"3 - salamander(4 classes: salamandra, common newt, eft, spotted salamander)"},
-          {value:"4", label:"4 - frog(3 classes: bullfrog, tree frog, tailed frog)"},
-          {value:"5", label:"5 - turtle(2 classes: loggerhead, leatherback turtle)"},
-          {value:"6", label:"6 - lizard(4 classes: banded gecko, iguana, anole, whiptail)"},
-          {value:"7", label:"7 - crocodile(2 classes: African crocodile, American alligator)"},
-          {value:"8", label:"8 - dinosaur(1 class: triceratops)"},
-          {value:"9", label:"9 - snake(3 classes: thunder snake, ringneck snake, hognose snake)"},
-          {value:"-1", label:'...', disable: true}
-        ]
-      }
-      else if (this.datasetFile === 'cifar100'){
-        console.log('set targetSUPERclass for CIFAR-100')
-        this.targetSuperclassIdxOptions = [
-          {value:"0", label:"0 - beaver, dolphin, otter, seal, whale"},
-          {value:"1", label:"1 - aquarium_fish, flatfish, ray, shark, trout"},
-          {value:"2", label:"2 - orchid, poppy, rose, sunflower, tulip"},
-          {value:"3", label:"3 - bottle, bowl, can, cup, plate"},
-          {value:"4", label:"4 - apple, mushroom, orange, pear, sweet_pepper"},
-          {value:"5", label:"5 - clock, keyboard, lamp, telephone, television"},
-          {value:"6", label:"6 - bed, chair, couch, table, wardrobe"},
-          {value:"7", label:"7 - bee, beetle, butterfly, caterpillar, cockroach"},
-          {value:"8", label:"8 - bear, leopard, lion, tiger, wolf"},
-          {value:"9", label:"9 - bridge, castle, house, road, skyscraper"},
-          {value:"10", label:"10 - cloud, forest, mountain, plain, sea"},
-          {value:"11", label:"11 - camel, cattle, chimpanzee, elephant, kangaroo"},
-          {value:"12", label:"12 - fox, porcupine, possum, raccoon, skunk"},
-          {value:"13", label:"13 - crab, lobster, snail, spider, worm"},
-          {value:"14", label:"14 - baby, boy, girl, man, woman"},
-          {value:"15", label:"15 - crocodile, dinosaur, lizard, snake, turtle"},
-          {value:"16", label:"16 - hamster, mouse, rabbit, shrew, squirrel"},
-          {value:"17", label:"17 - maple_tree, oak_tree, palm_tree, pine_tree, willow_tree"},
-          {value:"18", label:"18 - bicycle, bus, motorcycle, pickup_truck, train"},
-          {value:"19", label:"19 - lawn_mower, rocket, streetcar, tank, tractor"},
-        ]
-      }
-    }
-    if(this.directModelReuse === 'Binary Classification'){
-      if(this.datasetFile === 'cifar10'){
-        console.log('set targetclass for cifar10')
-        this.targetClassIdxOptions=[
-          {value:"0", label:"0 - Airplane"},{value:"1", label:"1 - Automobile"},
-          {value:"2", label:"2 - Bird"},{value:"3", label:"3 - Cat"},
-          {value:"4", label:"4 - Deer"},{value:"5", label:"5 - Dog"},
-          {value:"6", label:"6 - Frog"},{value:"7", label:"7 - Horse"},
-          {value:"8", label:"8 - Ship"},{value:"9", label:"9 - Truck"},
-        ]
-      }
-      else if(this.datasetFile === 'cifar100'){
-        console.log('set targetclass for cifar100')
-        this.targetClassIdxOptions = [
-            {value:"0",label:"0 - apple"},
-            {value:"1",label:"1 - aquarium_fish"},
-            {value:"2",label:"2 - baby"},
-            {value:"3",label:"3 - bear"},
-            {value:"4",label:"4 - beaver"},
-            {value:"5",label:"5 - bed"},
-            {value:"6",label:"6 - bee"},
-            {value:"7",label:"7 - beetle"},
-            {value:"8",label:"8 - bicycle"},
-            {value:"9",label:"9 - bottle"},
-            {value:"10",label:"10 - bowl"},
-            {value:"11",label:"11 - boy"},
-            {value:"12",label:"12 - bridge"},
-            {value:"13",label:"13 - bus"},
-            {value:"14",label:"14 - butterfly"},
-            {value:"15",label:"15 - camel"},
-            {value:"16",label:"16 - can"},
-            {value:"17",label:"17 - castle"},
-            {value:"18",label:"18 - caterpillar"},
-            {value:"19",label:"19 - cattle"},
-            {value:"20",label:"20 - chair"},
-            {value:"21",label:"21 - chimpanzee"},
-            {value:"22",label:"22 - clock"},
-            {value:"23",label:"23 - cloud"},
-            {value:"24",label:"24 - cockroach"},
-            {value:"25",label:"25 - couch"},
-            {value:"26",label:"26 - crab"},
-            {value:"27",label:"27 - crocodile"},
-            {value:"28",label:"28 - cup"},
-            {value:"29",label:"29 - dinosaur"},
-            {value:"30",label:"30 - dolphin"},
-            {value:"31",label:"31 - elephant"},
-            {value:"32",label:"32 - flatfish"},
-            {value:"33",label:"33 - forest"},
-            {value:"34",label:"34 - fox"},
-            {value:"35",label:"35 - girl"},
-            {value:"36",label:"36 - hamster"},
-            {value:"37",label:"37 - house"},
-            {value:"38",label:"38 - kangaroo"},
-            {value:"39",label:"39 - keyboard"},
-            {value:"40",label:"40 - lamp"},
-            {value:"41",label:"41 - lawn_mower"},
-            {value:"42",label:"42 - leopard"},
-            {value:"43",label:"43 - lion"},
-            {value:"44",label:"44 - lizard"},
-            {value:"45",label:"45 - lobster"},
-            {value:"46",label:"46 - man"},
-            {value:"47",label:"47 - maple_tree"},
-            {value:"48",label:"48 - motorcycle"},
-            {value:"49",label:"49 - mountain"},
-            {value:"50",label:"50 - mouse"},
-            {value:"51",label:"51 - mushroom"},
-            {value:"52",label:"52 - oak_tree"},
-            {value:"53",label:"53 - orange"},
-            {value:"54",label:"54 - orchid"},
-            {value:"55",label:"55 - otter"},
-            {value:"56",label:"56 - palm_tree"},
-            {value:"57",label:"57 - pear"},
-            {value:"58",label:"58 - pickup_truck"},
-            {value:"59",label:"59 - pine_tree"},
-            {value:"60",label:"60 - plain"},
-            {value:"61",label:"61 - plate"},
-            {value:"62",label:"62 - poppy"},
-            {value:"63",label:"63 - porcupine"},
-            {value:"64",label:"64 - possum"},
-            {value:"65",label:"65 - rabbit"},
-            {value:"66",label:"66 - raccoon"},
-            {value:"67",label:"67 - ray"},
-            {value:"68",label:"68 - road"},
-            {value:"69",label:"69 - rocket"},
-            {value:"70",label:"70 - rose"},
-            {value:"71",label:"71 - sea"},
-            {value:"72",label:"72 - seal"},
-            {value:"73",label:"73 - shark"},
-            {value:"74",label:"74 - shrew"},
-            {value:"75",label:"75 - skunk"},
-            {value:"76",label:"76 - skyscraper"},
-            {value:"77",label:"77 - snail"},
-            {value:"78",label:"78 - snake"},
-            {value:"79",label:"79 - spider"},
-            {value:"80",label:"80 - squirrel"},
-            {value:"81",label:"81 - streetcar"},
-            {value:"82",label:"82 - sunflower"},
-            {value:"83",label:"83 - sweet_pepper"},
-            {value:"84",label:"84 - table"},
-            {value:"85",label:"85 - tank"},
-            {value:"86",label:"86 - telephone"},
-            {value:"87",label:"87 - television"},
-            {value:"88",label:"88 - tiger"},
-            {value:"89",label:"89 - tractor"},
-            {value:"90",label:"90 - train"},
-            {value:"91",label:"91 - trout"},
-            {value:"92",label:"92 - tulip"},
-            {value:"93",label:"93 - turtle"},
-            {value:"94",label:"94 - wardrobe"},
-            {value:"95",label:"95 - whale"},
-            {value:"96",label:"96 - willow_tree"},
-            {value:"97",label:"97 - wolf"},
-            {value:"98",label:"98 - woman"},
-            {value:"99",label:"99 - worm"},
-        ]
-      }
-    }
-  },
+
   // The handler function when the user selects a model file
   onModelFileChange(event) {
     this.modelFile = event.target.files[0];
@@ -667,8 +417,8 @@ methods: {
     axios.post('http://localhost:5000/run_model', data)
       .then(response => {
         // success, return results
-        // this.logs = response.data.logs;
-        // this.isModelReady = response.data.isModelReady;
+        this.logs = response.data.logs;
+        this.isModelReady = response.data.isModelReady;
       })
       .catch(error => {
         // return errors
@@ -797,9 +547,6 @@ color: #333;
 }
 .form-body {
   margin-top: 60px;
-}
-.selectLong .el-input{
-  width:450px;
 }
 .selectItem .el-form-item__label{
   font-size: large;

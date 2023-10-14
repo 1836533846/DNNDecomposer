@@ -32,9 +32,9 @@ print(global_config_Grad.data_dir)
 #                    target_class=0, lr_mask=0.01, alpha=1)
 
 
-from SeaM_main.src.binary_class.SeaM_reasoning import cifar10_inference
-label = cifar10_inference.predict('image/cat.png')
-print(f"LABEL:{label}")
+# from SeaM_main.src.binary_class.SeaM_reasoning import cifar10_inference
+# label = cifar10_inference.predict('image/cat.png')
+# print(f"LABEL:{label}")
 
 model_file="vgg16"
 dataset_file="cifar10"
@@ -49,30 +49,30 @@ if __name__ == "__main__":
         print(f'best_acc: {best_acc * 100:.2f}%')
         print(f'best_avg_kernel: {best_avg_kernel:.2f}')
 
-    def dir_convert(algorithm, direct_model_reuse, model_file, dataset_file,
-                target_class_str, target_superclass_idx_str,lr_mask,alpha,lr_head=0.1):
-        alpha = float(alpha)
-        if algorithm == "SEAM":
-            algorithm_path = f"{global_config_SeaM.data_dir}/flask_project"
-            file_name = f"lr_head_mask_{lr_head}_{lr_mask}_alpha_{alpha}.pth"
-            # algorithm_path = "flask_project/SeaM_main/data"
-            if direct_model_reuse == "Binary Classification":
-                model_reuse_path = f"/binary_classification/{model_file}_{dataset_file}/tc_{target_class_str}/"
-            elif direct_model_reuse == "Multi-Class Classification":
-                model_reuse_path = f"/multi_class_classification/{model_file}_{dataset_file}/tsc_{target_superclass_idx_str}/"
-            return f"{algorithm_path}{model_reuse_path}",file_name
-        # =====================================TO BE CONTINUED============================
-        elif algorithm == "GradSplitter":
-            algorithm_path = "/GradSplitter_main/data/"
+    # def dir_convert(algorithm, direct_model_reuse, model_file, dataset_file,
+    #             target_class_str, target_superclass_idx_str,lr_mask,alpha,lr_head=0.1):
+    #     alpha = float(alpha)
+    #     if algorithm == "SEAM":
+    #         algorithm_path = f"{global_config_SeaM.data_dir}/flask_project"
+    #         file_name = f"lr_head_mask_{lr_head}_{lr_mask}_alpha_{alpha}.pth"
+    #         # algorithm_path = "flask_project/SeaM_main/data"
+    #         if direct_model_reuse == "Binary Classification":
+    #             model_reuse_path = f"/binary_classification/{model_file}_{dataset_file}/tc_{target_class_str}/"
+    #         elif direct_model_reuse == "Multi-Class Classification":
+    #             model_reuse_path = f"/multi_class_classification/{model_file}_{dataset_file}/tsc_{target_superclass_idx_str}/"
+    #         return f"{algorithm_path}{model_reuse_path}",file_name
+    #     # =====================================TO BE CONTINUED============================
+    #     elif algorithm == "GradSplitter":
+    #         algorithm_path = "/GradSplitter_main/data/"
         
-    dir,filename = dir_convert(algorithm="SEAM", direct_model_reuse="Binary Classification", model_file="vgg16", \
-                dataset_file="cifar10",target_class_str="0", target_superclass_idx_str="0",lr_mask="0.01",alpha=1)
-    print(dir)
-    print(filename)
+    # dir,filename = dir_convert(algorithm="SEAM", direct_model_reuse="Binary Classification", model_file="vgg16", \
+    #             dataset_file="cifar10",target_class_str="0", target_superclass_idx_str="0",lr_mask="0.01",alpha=1)
+    # print(dir)
+    # print(filename)
     
 
-    model = 'simcnn'
-    dataset = 'cifar10'
+    # model = 'simcnn'
+    # dataset = 'cifar10'
     # run_ensemble_modules_script(model,dataset)
 
 
@@ -81,9 +81,9 @@ if __name__ == "__main__":
     # run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
     #                             target_class=target_class,
     #                             lr_mask=learning_rate, alpha=alpha)
-    # run_calculate_flop_bc(model="vgg16", dataset="cifar10", 
-    #                       target_class=0, lr_mask=0.01, alpha=1, 
-    #                       callback="debug")
+    run_calculate_flop_bc(model="vgg16", dataset="cifar10", 
+                          target_class=0, lr_mask=0.01, alpha=1, 
+                          callback="debug")
     
     # run_reengineering_finetune(model="resnet18", dataset="mit67",
     #                            lr_mask=0.05, alpha=0.5, prune_threshold=0.6)
@@ -97,8 +97,8 @@ if __name__ == "__main__":
     # run_calculate_flop_mc(model="resnet20", dataset="cifar100", 
     #                target_superclass_idx=0, lr_mask=0.1, alpha=2.0,
     #                callback="debug")
-    print("run_reuse_modules_script")
-    run_reuse_modules_script()
+    # print("run_reuse_modules_script")
+    # run_reuse_modules_script()
 
     # run_calculate_flop(model="vgg16", dataset="cifar10", 
     #                target_class=0, lr_mask=0.01, alpha=1.0)

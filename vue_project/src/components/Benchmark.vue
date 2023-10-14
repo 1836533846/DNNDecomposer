@@ -3,7 +3,7 @@
     <el-container>
         <el-header style="height: 85px;">
         <span style="margin-top: 0;margin-left: 5%;" @click="jumptohome"> 
-            SeaMGrad Tool Demo</span>
+            DecBot</span>
         </el-header>
         <el-main>
             

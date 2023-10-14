@@ -198,10 +198,18 @@ def main_func(args, num_workers, pin_memory, config):
     model_params = model.state_dict()
     masked_params = OrderedDict()
     check_flag = 0
+    sum_mask_ones = 0
+    sum_masks = 0
     for name, weight in model_params.items():
         if f'{name}_mask' in masks:
             mask = masks[f'{name}_mask']
             bin_mask = (mask > 0).float()
+            # Calculate how many ones and nums in mask
+            num_ones = bin_mask.sum().item()
+            total_elem = bin_mask.numel()
+            sum_mask_ones += num_ones
+            sum_masks += total_elem
+            
             masked_weight = weight * bin_mask
             masked_params[name] = masked_weight
             check_flag += 1
@@ -211,6 +219,13 @@ def main_func(args, num_workers, pin_memory, config):
             check_flag += 1
         else:
             masked_params[name] = weight
+    # Convert to million
+    sum_mask_ones /= 1e6
+    sum_masks /= 1e6
+    print(f"Weights of original model:{sum_masks}million")
+    print(f"Weights of reengineered module:{sum_mask_ones}million")
+    print(f"Weight retain rate:{(sum_mask_ones/sum_masks):.2%}")
+
     assert check_flag == len(masks)
     model.load_state_dict(masked_params)
 
@@ -228,7 +243,9 @@ def main_func(args, num_workers, pin_memory, config):
     perc_sparse_dense = total_flop_sparse / total_flop_dense
     
     # return results
-    return m_total_flop_dense, m_total_flop_sparse, perc_sparse_dense, acc_reeng
+    return m_total_flop_dense, m_total_flop_sparse, perc_sparse_dense, \
+            acc_reeng, sum_mask_ones, sum_masks
+
 
 def run_calculate_flop_bc(model, dataset, target_class, lr_mask, alpha, callback):
 
@@ -242,8 +259,8 @@ def run_calculate_flop_bc(model, dataset, target_class, lr_mask, alpha, callback
     acc_pre = eval_pretrained_model(args, num_workers, pin_memory)  # check the model's acc
     print(f'Pretrained Model   ACC: {acc_pre:.2%}')
 
-    m_total_flop_dense, m_total_flop_sparse, perc_sparse_dense, acc_reeng = \
-                        main_func(args, num_workers, pin_memory, config)
+    m_total_flop_dense, m_total_flop_sparse, perc_sparse_dense, \
+    acc_reeng, sum_mask_ones, sum_masks= main_func(args, num_workers, pin_memory, config)
     
     print(f'FLOPs  Dense: {m_total_flop_dense:.2f}M')
     print(f'FLOPs Sparse: {m_total_flop_sparse:.2f}M')
@@ -251,7 +268,8 @@ def run_calculate_flop_bc(model, dataset, target_class, lr_mask, alpha, callback
     print(f'Reengineered Model   ACC: {acc_reeng:.2%}\n')
     if callback!="debug":
         callback(m_total_flop_dense=m_total_flop_dense, m_total_flop_sparse=m_total_flop_sparse, \
-             perc_sparse_dense=perc_sparse_dense, acc_reeng=acc_reeng, acc_pre=acc_pre)
+             perc_sparse_dense=perc_sparse_dense, acc_reeng=acc_reeng, acc_pre=acc_pre,\
+                sum_mask_ones=sum_mask_ones, sum_masks=sum_masks,weight_retain_rate=sum_mask_ones/sum_masks)
     
     return m_total_flop_dense, m_total_flop_sparse, \
             perc_sparse_dense, acc_reeng, acc_pre

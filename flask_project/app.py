@@ -60,7 +60,7 @@ def dir_convert(algorithm, direct_model_reuse, model_file, dataset_file,
             model_reuse_path = f"/binary_classification/{model_file}_{dataset_file}/tc_{target_class_str}/"
         elif direct_model_reuse == "Multi-Class Classification":
             file_name = f"lr_head_mask_{lr_head}_{lr_mask}_alpha_{alpha}.pth"
-            model_reuse_path = f"/multi_class_classification/{model_file}_{dataset_file}/tsc_{target_superclass_idx_str}/"
+            model_reuse_path = f"/multi_class_classification/{model_file}_{dataset_file}/predefined/tsc_{target_superclass_idx_str}/"
         elif direct_model_reuse == "Defect Inheritance":
             file_name = "step_3_seam_ft.pth"
             model_reuse_path = f"/defect_inheritance/seam_ft/resnet18_mit67_dropout_0.0/lr_mask_{lr_mask}_alpha_{alpha}_thres_0.6/"
@@ -181,6 +181,9 @@ def run_model():
                     'perc_sparse_dense': 'FLOPs % (Sparse / Dense): {:.2%}',
                     'acc_pre': 'Pretrained Model ACC: {:.2%}',
                     'acc_reeng': 'Reengineered Model ACC: {:.2%}',
+                    'sum_masks':'Weights of original model:{:.2f}million',
+                    'sum_mask_ones':'Weights of reengineered module:{:.2f}million',
+                    'weight_retain_rate':"Weight retain rate:{:.2%}",
                     # For Defect Inheritance reengineering
                     'best_epoch_step1': 'Best epoch in step 1:{}',
                     'best_acc_step1': 'Best acc in step 1:{:.2%}',
@@ -204,9 +207,9 @@ def run_model():
             def run():
                 if direct_model_reuse=='Binary Classification':
                     socketio.emit('message','\n Reengineering Model, Please Wait!!!')
-                    run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
-                                    target_class=target_class,lr_mask=learning_rate, alpha=alpha, 
-                                    n_epochs=300,get_epochs=get_epochs)
+                    # run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
+                    #                 target_class=target_class,lr_mask=learning_rate, alpha=alpha, 
+                    #                 n_epochs=300,get_epochs=get_epochs)
                     socketio.emit('message','\n Model is ready, waiting for calculating flops......')
                     run_calculate_flop_bc(model=model_file, dataset=dataset_file, 
                                 target_class=target_class, lr_mask=learning_rate, alpha=alpha,
@@ -214,9 +217,9 @@ def run_model():
                     
                 elif direct_model_reuse=='Multi-Class Classification':
                     socketio.emit('message','\n Reengineering Model, Please Wait!!!')  
-                    run_model_reengineering_mc(model=model_file, dataset=dataset_file, 
-                                target_superclass_idx=target_superclass_idx,
-                                lr_mask=learning_rate, alpha=alpha, get_epochs=get_epochs)
+                    # run_model_reengineering_mc(model=model_file, dataset=dataset_file, 
+                    #             target_superclass_idx=target_superclass_idx,
+                    #             lr_mask=learning_rate, alpha=alpha, get_epochs=get_epochs)
                     socketio.emit('message','\n Model is ready, waiting for calculating flops......')
                     run_calculate_flop_mc(model=model_file, dataset=dataset_file, 
                                 target_superclass_idx=target_superclass_idx, 
