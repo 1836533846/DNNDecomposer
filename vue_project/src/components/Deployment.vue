@@ -7,7 +7,7 @@
         <el-main>
             <h2 style="text-align: left;margin-left: 15%;margin-top: 2%;margin-bottom: 3%;">
                 <i class="el-icon-arrow-left" style="margin-right: 5px;" @click="jumptohome"></i>
-                Module Deployment</h2>
+                Module Reuse</h2>
             <div style="text-align: center;">
                 <div class="DatatTable" style="margin-left: 20%;margin-right: 20%;margin-top: 40px;">
                 <el-descriptions title="Model Modularization Information" border>
@@ -60,7 +60,7 @@
                             <el-radio v-model="selectedImage" label="dog" >Dog </el-radio>
                         </el-card>
 
-                        <el-button type="primary"  slot="trigger" style="margin-bottom: 10px;float: right;"> 
+                        <el-button type="primary"  slot="trigger" style="margin-bottom: 10px;float: right;" disabled=true> 
                             Browse and Upload Image </el-button>
                         <el-button style="margin-left: 10px;margin-bottom: 10px;" type="warning" 
                             @click="submitDelopyment">Run</el-button>
@@ -125,7 +125,7 @@ export default {
 
         this.socket.on('deployment_result', (data) => {
             console.log('received deployment result: ' + JSON.stringify(data));
-            this.deploymentlogs += 'Module DeployMent Result: ' + JSON.stringify(data) + '\n';
+            this.deploymentlogs += 'Module Deployment Result: ' + JSON.stringify(data) + '\n';
         });
 
         this.socket.on('deployment_message', (data) => {

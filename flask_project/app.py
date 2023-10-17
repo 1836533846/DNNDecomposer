@@ -96,8 +96,8 @@ def benchmark():
             def run():
                 try:
                     if direct_model_reuse=='Binary Classification':
-                        socketio.emit('seam_message','\nReengineering Model, Please Wait!!!')
-                        print("\nReengineering Model, Please Wait!!!")
+                        socketio.emit('seam_message','\nDecomposing Model, Please Wait!!!')
+                        print("\nDecomposing Model, Please Wait!!!")
                         # run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
                         #                 target_class=target_class,lr_mask=learning_rate, alpha=alpha)
                         socketio.emit('seam_message','\nModel is ready, waiting for calculating flops......')
@@ -126,9 +126,9 @@ def benchmark():
                 socketio.emit('grad_result', f'Best Acc: {best_acc * 100:.2f}%')
                 socketio.emit('grad_result', f'Best_avg_kernel: {best_avg_kernel:.2f}')
             def run():
-                socketio.emit('grad_message','\n Reengineering Model, Please Wait!!!')
+                socketio.emit('grad_message','\n Decomposing Model, Please Wait!!!')
                 run_splitter_script(model=model_file,dataset=dataset_file)
-                socketio.emit('grad_message','\n Reengineering Done!')
+                socketio.emit('grad_message','\n Decomposing Done!')
                 socketio.emit('grad_message','\n Selecting Modules, Please Wait!!!')
                 run_select_modules_script(model=model_file,dataset=dataset_file)
                 socketio.emit('grad_message','\n Modules Selected!!!')
@@ -206,7 +206,7 @@ def run_model():
                 return epoch_percentage
             def run():
                 if direct_model_reuse=='Binary Classification':
-                    socketio.emit('message','\n Reengineering Model, Please Wait!!!')
+                    socketio.emit('message','\n Decomposing Model, Please Wait!!!')
                     # run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
                     #                 target_class=target_class,lr_mask=learning_rate, alpha=alpha, 
                     #                 n_epochs=300,get_epochs=get_epochs)
@@ -216,7 +216,7 @@ def run_model():
                                 callback=callback)
                     
                 elif direct_model_reuse=='Multi-Class Classification':
-                    socketio.emit('message','\n Reengineering Model, Please Wait!!!')  
+                    socketio.emit('message','\n Decomposing Model, Please Wait!!!')  
                     # run_model_reengineering_mc(model=model_file, dataset=dataset_file, 
                     #             target_superclass_idx=target_superclass_idx,
                     #             lr_mask=learning_rate, alpha=alpha, get_epochs=get_epochs)
@@ -236,7 +236,7 @@ def run_model():
                     # 
                     # 4. Compute the defect inheritance rate of fine-tuned 
                     # original ResNet18-Scenes.
-                    socketio.emit('message','\n ## Reengineering model...... ##')
+                    socketio.emit('message','\n ## Decomposing Model...... ##')
                     socketio.emit('message','\n ## Process might be stopped before 100% when it fits the target! ##')
                     run_reengineering_finetune(model=model_file, dataset=dataset_file,
                            lr_mask=0.05, alpha=0.5, prune_threshold=0.6, callback=callback,get_epochs=get_epochs)
@@ -254,7 +254,7 @@ def run_model():
                     return ValueError
             # start a new thread to run the model
             threading.Thread(target=run).start()
-            return {'logs': "Model is reengineering......\n", 'isModelReady': True}, 200
+            return {'logs': "Model is decomposing......\n", 'isModelReady': True}, 200
         except Exception as e:
             return {'logs': str(e), 'isModelReady': False}, 500
     elif algorithm=='GradSplitter':
@@ -270,9 +270,9 @@ def run_model():
                 print(f"Epoch percentage:{epoch_percentage:.2f}%")
                 return epoch_percentage
             def run():
-                socketio.emit('message','\n Reengineering Model, Please Wait!!!')
+                socketio.emit('message','\n Decomposing Model, Please Wait!!!')
                 run_splitter_script(model=model_file,dataset=dataset_file,callback=callback, get_epochs=get_epochs)
-                socketio.emit('message','\n Reengineering Done!')
+                socketio.emit('message','\n Decomposing Done!')
                 socketio.emit('message','\n Selecting Modules, Please Wait!!!')
                 run_select_modules_script(model=model_file,dataset=dataset_file)
                 socketio.emit('message','\n Modules Selected!!!')

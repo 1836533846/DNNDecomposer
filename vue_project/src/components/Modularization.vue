@@ -128,7 +128,7 @@
                   @click="download"> 
                 Download Process Model</el-button>
                 <el-button v-if="algorithm==='SEAM'" style="justify-content:flex-end;margin-left:auto;font-size: larger;margin-bottom: 10px;flex:0 auto; width: 240px;" type="primary" @click="JumpToDeployment"> 
-                Module Deployment </el-button>
+                Module Reuse </el-button>
                 <el-button v-if="algorithm==='GradSplitter'" style="justify-content:flex-end;margin-left:auto;font-size: larger;margin-bottom: 10px;flex:0 auto;width: 240px;" type="primary" @click="openReuse"> 
                 Module Reuse </el-button>
               </div>
@@ -160,7 +160,7 @@
               ref="reuseDialogForm" :model="reuseDialogForm" id="reuseDialogForm" :inline="true" >
             <el-form-item label="Reuse Method:" class="selectItemMini">
               <el-radio-group v-model="reuseMethod" @change="ResetModelandDataset">
-                <el-radio label="More Accurate">More More Accurate</el-radio>
+                <el-radio label="More Accurate">More Accurate</el-radio>
                 <el-radio label="For New Task" >For New Task</el-radio>
               </el-radio-group>
             </el-form-item>
@@ -304,8 +304,10 @@ data() {
       {value:"8", label:"8 - Ship"},{value:"9", label:"9 - Truck"},
     ],
     svhnclasses:[
-      {value:"0", label:" Number 0"},{value:"1", label:" Number 1"},{value:"2", label:" Number 2"},{value:"3", label:" Number 3"},{value:"4", label:" Number 4"},
-      {value:"5", label:" Number 5"},{value:"6", label:" Number 6"},{value:"7", label:" Number 7"},{value:"8", label:" Number 8"},{value:"9", label:" Number 9"},
+      {value:"0", label:"0 - Number 0"},{value:"1", label:"1 - Number 1"},{value:"2", label:"2 - Number 2"},
+      {value:"3", label:"3 - Number 3"},{value:"4", label:"4 - Number 4"},
+      {value:"5", label:"5 - Number 5"},{value:"6", label:"6 - Number 6"},{value:"7", label:"7 - Number 7"},
+      {value:"8", label:"8 - Number 8"},{value:"9", label:"9 - Number 9"},
     ],
   };
 },
@@ -353,6 +355,9 @@ computed: {
       that.settargetIdxOptions()
       this.learningRate = 0.01
       this.alpha = 1
+      if(this.datasetFile === 'cifar100'){
+        this.learningRate = 0.05
+      }
    }
    if (this.modelFile === 'resnet20'){
       if(this.datasetFile === 'cifar10'){
@@ -362,7 +367,7 @@ computed: {
         this.selectDisabled.defect = true
         this.directModelReuse = 'Binary Classification'
         that.settargetIdxOptions()
-        this.learningRate = 0.01
+        this.learningRate = 0.05
         this.alpha = 1
       }
       else if(this.datasetFile === 'cifar100'){
@@ -372,8 +377,8 @@ computed: {
         this.selectDisabled.defect = true 
         this.selectDisabled.multi = false
         this.selectDisabled.binary = false
-        this.learningRate = 0.01
-        this.alpha = 1
+        this.learningRate = 0.1
+        this.alpha = 1.5
       }
    }
    if(this.modelFile === 'resnet50' && this.datasetFile === 'ImageNet'){
@@ -383,8 +388,8 @@ computed: {
       this.selectDisabled.defect = true
       this.directModelReuse = 'Multi-Class Classification'
       that.settargetIdxOptions()
-      this.learningRate = 0.01
-      this.alpha = 1
+      this.learningRate = 0.05
+      this.alpha = 2
    }
    if(this.modelFile === 'resnet18' && this.datasetFile === 'mit67'){
       this.algorithm= 'SEAM'
@@ -509,6 +514,9 @@ methods: {
           {value:"18", label:"18 - bicycle, bus, motorcycle, pickup_truck, train"},
           {value:"19", label:"19 - lawn_mower, rocket, streetcar, tank, tractor"},
         ]
+        if (this.modelFile == 'resnet20'){
+          this.alpha = 2
+        }
       }
     }
     if(this.directModelReuse === 'Binary Classification'){
@@ -626,6 +634,9 @@ methods: {
             {value:"98",label:"98 - woman"},
             {value:"99",label:"99 - worm"},
         ]
+        if (this.modelFile == 'resnet20'){
+          this.alpha = 1.5
+        }
       }
     }
   },
@@ -692,7 +703,7 @@ methods: {
     axios.post('http://localhost:5000/run_reuse', data)
       .then(response => {
         // success, return results
-        this.reuselogs = response.data.reuselogs;
+        // this.reuselogs = response.data.reuselogs;
         // this.isModelReady = response.data.isModelReady;
       })
       .catch(error => {
