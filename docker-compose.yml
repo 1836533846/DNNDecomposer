@@ -2,11 +2,27 @@ version: '3'
 
 services:
   frontend:
+    image: tooldemo_gs_fronted
     build: ./vue_project
     ports:
-      - "8081:8081"
+      - "8083:8080"
 
   backend:
+    image: tooldemo_gs_backend
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
     build: ./flask_project
+    volumes:
+      - /data/bixh/ToolDemo_GS/GradSplitter_main/data:/app/GradSplitter_main/data
+      - /data/bixh/ToolDemo_GS/SeaM_main/data:/app/SeaM_main/data
     ports:
       - "5000:5000"
+    environment:
+      FLASK_APP: /app/app.py
+      FLASK_RUN_HOST: 0.0.0.0

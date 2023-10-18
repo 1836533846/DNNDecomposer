@@ -35,7 +35,7 @@ CORS(app,expose_headers=['Content-Disposition'])
 
 app.config['UPLOAD_FOLDER'] = 'uploads'
 # create a SocketIO instance
-socketio = SocketIO(app, cors_allowed_origins="*",\
+socketio = SocketIO(app, cors_allowed_origins="*",allow_unsafe_werkzeug=True,\
                     expose_headers=['Content-Disposition'])
 
 @app.route('/')
