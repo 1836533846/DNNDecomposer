@@ -19,6 +19,48 @@ Several DNN modularization methods have been proposed to decompose a DNN model i
 [todo]
 ```
 
+## How to use
+
+The tool is divided into two parts.
+
+####  For WebUI:
+
+```bash
+cd vue_project
+```
+
+To install requirements, please run:
+
+```bash
+npm install
+```
+
+And for running the web UI:
+
+```bash
+npm run serve
+```
+
+#### For server:
+
+```bash
+cd flask_project
+```
+
+Python 3.8 and GPU with CUDA is required.
+
+To install requirements, run
+
+```ba
+pip install -r requirements.txt
+```
+
+And start the server:
+
+```ba
+flask run
+```
+
 ## Architecture
 
 ![image-20231024170713770](img/image-20231024170713770.png)
