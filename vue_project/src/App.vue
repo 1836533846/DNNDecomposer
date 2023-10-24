@@ -9,7 +9,7 @@
 // import MyComponent from './components/MyComponent'
 
 export default {
-  name: 'App', title:"DecBot Demo Tool"
+  name: 'App', title:"DNNDecomposer"
 
 }
 </script>

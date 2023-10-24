@@ -98,8 +98,8 @@ def benchmark():
                     if direct_model_reuse=='Binary Classification':
                         socketio.emit('seam_message','\nDecomposing Model, Please Wait!!!')
                         print("\nDecomposing Model, Please Wait!!!")
-                        # run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
-                        #                 target_class=target_class,lr_mask=learning_rate, alpha=alpha)
+                        run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
+                                        target_class=target_class,lr_mask=learning_rate, alpha=alpha)
                         socketio.emit('seam_message','\nModel is ready, waiting for calculating flops......')
                         run_calculate_flop_bc(model=model_file, dataset=dataset_file, 
                                     target_class=target_class, lr_mask=learning_rate, alpha=alpha,
@@ -207,9 +207,9 @@ def run_model():
             def run():
                 if direct_model_reuse=='Binary Classification':
                     socketio.emit('message','\n Decomposing Model, Please Wait!!!')
-                    # run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
-                    #                 target_class=target_class,lr_mask=learning_rate, alpha=alpha, 
-                    #                 n_epochs=300,get_epochs=get_epochs)
+                    run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
+                                    target_class=target_class,lr_mask=learning_rate, alpha=alpha, 
+                                    n_epochs=300,get_epochs=get_epochs)
                     socketio.emit('message','\n Model is ready, waiting for calculating flops......')
                     run_calculate_flop_bc(model=model_file, dataset=dataset_file, 
                                 target_class=target_class, lr_mask=learning_rate, alpha=alpha,
@@ -217,9 +217,9 @@ def run_model():
                     
                 elif direct_model_reuse=='Multi-Class Classification':
                     socketio.emit('message','\n Decomposing Model, Please Wait!!!')  
-                    # run_model_reengineering_mc(model=model_file, dataset=dataset_file, 
-                    #             target_superclass_idx=target_superclass_idx,
-                    #             lr_mask=learning_rate, alpha=alpha, get_epochs=get_epochs)
+                    run_model_reengineering_mc(model=model_file, dataset=dataset_file, 
+                                target_superclass_idx=target_superclass_idx,
+                                lr_mask=learning_rate, alpha=alpha, get_epochs=get_epochs)
                     socketio.emit('message','\n Model is ready, waiting for calculating flops......')
                     run_calculate_flop_mc(model=model_file, dataset=dataset_file, 
                                 target_superclass_idx=target_superclass_idx, 

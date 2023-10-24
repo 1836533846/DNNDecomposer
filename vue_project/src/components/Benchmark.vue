@@ -3,7 +3,7 @@
     <el-container>
         <el-header style="height: 85px;">
         <span style="margin-top: 0;margin-left: 5%;" @click="jumptohome"> 
-            DecBot</span>
+            DNNDecomposer</span>
         </el-header>
         <el-main>
             

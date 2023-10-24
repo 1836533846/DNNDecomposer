@@ -2,7 +2,7 @@
 
   <el-container>
       <el-header style="height: 85px;">
-      <span style="margin-top: 0;margin-left: 5%;"> DecBot</span>
+      <span style="margin-top: 0;margin-left: 5%;"> DNNDecomposer</span>
       </el-header>
       <el-main>
           <h2 style="text-align: left;margin-left: 15%;float: left;margin-top: 2%;margin-bottom: 3%;">
@@ -122,7 +122,7 @@
               <!-- Upload -->
               <div style="width: 80%;margin-top: 40px;display: flex; flex-direction: row;flex-wrap: wrap;">
                 <el-button style="font-size: larger;margin-bottom: 10px; width: 150px; flex:0 auto;" type="success" 
-                  @click="runModularization">
+                  @click="beforeRunModularization">
                 Modularize</el-button>
                 <el-button style="font-size: larger;margin-bottom: 10px; width: 300px;flex:0 auto;" type="warning" 
                   @click="download"> 
@@ -188,6 +188,20 @@
           <el-button type="primary" @click="runReuse">Run Module Reuse</el-button>
           <el-button type="warning" @click="REUSEdialogVisible = false">Close</el-button>
         </span>
+      </el-dialog>
+
+      <el-dialog :visible.sync="AreUSure" width="30%" class="areusuredialog">
+        <span slot="title" class="header-title">
+          <h2 style="margin-left: 20px;">
+            <i class="el-icon-warning" style="margin-right: 10px;"></i>
+            Warning</h2>
+        </span>
+        <p style="font-size: medium;">This function will cost around 900 minutes for decomposing 10 pretrained models.
+        Please comfirm that you have enough time.</p>
+        <div style="text-align: center;height: 50px;margin-top: 40px;">
+          <el-button type="primary" @click="runModularization"> I'm Sure </el-button>
+          <el-button type="warning" @click="AreUSure = false"> Quit </el-button>
+        </div>
       </el-dialog>
   </el-container>
 
@@ -288,6 +302,7 @@ data() {
     reuseMethod:'', // in Model Reuse [=More Accurate/For New Task]
     cifarclass:'',
     svhnclass:'',
+    AreUSure:false ,
 
     targetSuperclassIdxOptions:[
       {value:"0", label:"0"},{value:"1", label:"1"},{value:"2", label:"2"},{value:"3", label:"3"},{value:"4", label:"4"},
@@ -648,8 +663,22 @@ methods: {
   onDatasetFileChange(event) {
     this.datasetFile = event.target.files[0];
   },
-
+  beforeRunModularization(){
+    if(this.algorithm === 'GradSplitter'){
+      console.log('before run gradsplitter')
+      this.AreUSure = true
+    }
+    else{
+      console.log('befor run seam')
+      let that = this
+      that.runModularization()
+    }
+  },
   runModularization(){
+    console.log('run modular')
+    if(this.AreUSure === true){
+      this.AreUSure = false
+    }
     this.$message({message:'RUNNING...',  type: 'success'}, {center:true, showConfirmButton:false})
     const data = {
       modelFile: this.modelFile,
@@ -829,5 +858,12 @@ color: #333;
 .modelDataset .el-radio /deep/ .el-radio__label{
 min-width: 100px;
 }
-
+.areusuredialog .el-dialog__body{
+  padding: 10px 30px;
+  word-break: normal;
+}
+.areusuredialog .el-dialog__header{
+  padding-bottom: 0;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+}
 </style>

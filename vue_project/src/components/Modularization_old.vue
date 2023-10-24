@@ -2,7 +2,7 @@
 
   <el-container>
       <el-header style="height: 85px;">
-      <span style="margin-top: 0;margin-left: 5%;"> DecBot</span>
+      <span style="margin-top: 0;margin-left: 5%;"> DNNDecomposer</span>
       </el-header>
       <el-main>
           <h2 style="text-align: left;margin-left: 15%;float: left;margin-top: 2%;margin-bottom: 3%;">

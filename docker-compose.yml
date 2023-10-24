@@ -2,10 +2,10 @@ version: '3'
 
 services:
   frontend:
-    image: tooldemo_gs_fronted
+    image: tooldemo_gs_frontend
     build: ./vue_project
     ports:
-      - "8083:8080"
+      - "8081:8080"
 
   backend:
     image: tooldemo_gs_backend
@@ -21,8 +21,9 @@ services:
     volumes:
       - /data/bixh/ToolDemo_GS/GradSplitter_main/data:/app/GradSplitter_main/data
       - /data/bixh/ToolDemo_GS/SeaM_main/data:/app/SeaM_main/data
+      - /data/bixh/ToolDemo_GS/checkpoints:/root/.cache/torch/hub/checkpoints
     ports:
-      - "5000:5000"
+        - "5000:5000"
     environment:
       FLASK_APP: /app/app.py
-      FLASK_RUN_HOST: 0.0.0.0
+      # FLASK_RUN_HOST: 0.0.0.0
