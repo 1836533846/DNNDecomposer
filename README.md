@@ -23,7 +23,7 @@ Several DNN modularization methods have been proposed to decompose a DNN model i
 
 The tool is divided into two parts.
 
-####  For WebUI:
+###  For WebUI:
 
 ```bash
 cd vue_project
@@ -41,7 +41,7 @@ And for running the web UI:
 npm run serve
 ```
 
-#### For server:
+### For server:
 
 ```bash
 cd flask_project
