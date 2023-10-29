@@ -2,7 +2,11 @@
 
 A Tool for DNN Modularization to Support On-demand Model Reuse
 
-MORE RESULTS can be seen in /results/readme.md
+MORE RESULTS can be seen in :
+
+```bash
+/results/README.md
+```
 
 ## Abstract
 
