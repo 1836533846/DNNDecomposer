@@ -341,8 +341,7 @@ def download_file():
         directory,filename = dir_convert(algorithm=algorithm, direct_model_reuse=direct_model_reuse, \
                                    model_file=model_file, dataset_file=dataset_file,target_class_str=target_class, \
                                    target_superclass_idx_str=target_class,lr_mask=learning_rate,alpha=alpha)
-        # print(directory)
-        # print(filename)
+
         print(f"Attempting to send from directory: {directory}, filename: {filename}")  # Debug line
         response = send_from_directory(directory, filename, as_attachment=True)
         response.headers["content-disposition"] = filename
