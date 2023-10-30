@@ -19,8 +19,11 @@ services:
             capabilities: [gpu]
     build: ./flask_project
     volumes:
+    # Mount your data from "https://mega.nz/file/tX91ACpR#CSbQ2Xariha7_HLavE_6pKg4FoO5axOPemlv5J0JYwY" to /app/GradSplitter_main/data
       - /data/bixh/ToolDemo_GS/GradSplitter_main/data:/app/GradSplitter_main/data
+    # Mount your data from "https://mega.nz/folder/ADMjESyC#LkCOzE0qVHs8DOXkN3l_WA" to /app/SeaM_main/data
       - /data/bixh/ToolDemo_GS/SeaM_main/data:/app/SeaM_main/data
+    # If downloading trained models takes much time, please mount it to: /root/.cache/torch/hub/checkpoints
       - /data/bixh/ToolDemo_GS/checkpoints:/root/.cache/torch/hub/checkpoints
     ports:
         - "5000:5000"
