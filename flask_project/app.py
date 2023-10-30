@@ -48,13 +48,15 @@ def handle_connect():
     socketio.emit('message', 'Successfully connected to the server!')
 
 # Given name of algorithm, find the directory of it
-# ================后面想办法把路径抽象出来======================
 def dir_convert(algorithm, direct_model_reuse, model_file, dataset_file,
             target_class_str, target_superclass_idx_str,lr_mask,alpha,lr_head=0.1):
     if algorithm == "SEAM":
         # This is the real data dir in project!!!!!!!!!!!!!!!!!
-        # algorithm_path = f"{global_config_SeaM.data_dir}/flask_project"
-        algorithm_path = "/data/bixh/ToolDemo_GS/SeaM_main/data"
+        if os.path.exists("/data/bixh/ToolDemo_GS/SeaM_main/data"):
+            algorithm_path = "/data/bixh/ToolDemo_GS/SeaM_main/data"
+        else:
+            algorithm_path = f"{global_config_SeaM.data_dir}/flask_project"
+
         if direct_model_reuse == "Binary Classification":
             file_name = f"lr_head_mask_{lr_head}_{lr_mask}_alpha_{alpha}.pth"
             model_reuse_path = f"/binary_classification/{model_file}_{dataset_file}/tc_{target_class_str}/"
