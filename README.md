@@ -8,15 +8,34 @@ MORE RESULTS can be seen in :
 /results/README.md
 ```
 
+Docker images can be found in:
+
+https://hub.docker.com/repository/docker/bxh1/dnndecomposer/general
+
+To launch docker images and save logs, use:
+
+```bas
+docker-compose up >logs.txt
+```
+
 ## Abstract
 
 Several DNN modularization methods have been proposed to decompose a DNN model into a set of modules that can be reused independently or by composition. However, existing studies mainly focus on algorithm design and experimental evaluation. There lacks a tool supporting the modularization process. To fill in the gap, we present DNNDecomposer, a tool for providing integrated support for realizing model decomposition and module reuse. DNNDecomposer is implemented based on two DNN modularization approaches proposed by us previously. With DNNDecomposer, one can easily decompose trained model to modules on demand, and reuse modules for inference, building more accurate model or composing modules across models. Evaluations on widely-adopted models demonstrate that DNNDecomposer significantly curtails the overhead associated with model reuse. Impressively, it achieves model decomposition while improving classification accuracy in the target task through out-of-the-box operation. 
 
 ## Requirements
 
+**For WebUI:**
+
+- node v16.20.2
+- npm v8.19.4
+
+**For server:**
+
 - Python v3.8.10
 - Pytorch v1.8.1
 - Argparse v1.4.0
+- Flask v3.0.0
+- Werkzeug v3.0.0
 - GPU with CUDA support
 
 ## Structure of the directories
