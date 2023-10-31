@@ -28,6 +28,7 @@ Several DNN modularization methods have been proposed to decompose a DNN model i
 
 - node v16.20.2
 - npm v8.19.4
+- vue v2.6.11
 
 **For server:**
 
@@ -85,6 +86,12 @@ And start the server:
 ```ba
 flask run
 ```
+
+## Data
+
+Move [Data](https://mega.nz/file/tX91ACpR#CSbQ2Xariha7_HLavE_6pKg4FoO5axOPemlv5J0JYwY) to DNNDecomposer/flask_project/GradSplitter_main/data
+
+Move [Data](https://mega.nz/folder/ADMjESyC#LkCOzE0qVHs8DOXkN3l_WA) to DNNDecomposer/flask_project/SeaM_main/data
 
 ## Architecture
 

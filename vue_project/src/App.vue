@@ -30,6 +30,15 @@ body {
   /* position:top;
   top:0;bottom: 0;right: 0;left:0; */
   /* margin-top: 60px; */
+  scrollbar-width: 0;
 }
 
+
+#app ::-webkit-scrollbar {
+  width: 0!important ; display: none;
+}
+::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0;
+}
 </style>

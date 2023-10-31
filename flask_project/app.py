@@ -2,6 +2,7 @@ from datetime import timedelta
 from flask import Flask, request, render_template, send_from_directory,jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO,emit
+from flask_executor import Executor
 import os
 # from SeaM_main.src.binary_class.run_calculate_flop import run_calculate_flop
 from SeaM_main.src.multi_class.run_model_reengineering import run_model_reengineering_mc
@@ -31,6 +32,7 @@ import threading
 
 app = Flask(__name__)
 CORS(app,expose_headers=['Content-Disposition'])
+executor = Executor(app)
 
 
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -51,7 +53,7 @@ def handle_connect():
 def dir_convert(algorithm, direct_model_reuse, model_file, dataset_file,
             target_class_str, target_superclass_idx_str,lr_mask,alpha,lr_head=0.1):
     if algorithm == "SEAM":
-        # This is the real data dir in project!!!!!!!!!!!!!!!!!
+        # dir for debug in data disk
         if os.path.exists("/data/bixh/ToolDemo_GS/SeaM_main/data"):
             algorithm_path = "/data/bixh/ToolDemo_GS/SeaM_main/data"
         else:
@@ -255,8 +257,9 @@ def run_model():
                     print("Model reuse type error!!")
                     return ValueError
             # start a new thread to run the model
-            threading.Thread(target=run).start()
-            return {'logs': "Model is decomposing......\n", 'isModelReady': True}, 200
+            # threading.Thread(target=run).start()
+            future = executor.submit(run)
+            return {'logs': "Model run successfully", 'isModelReady': True, 'task_id': future.id}, 200
         except Exception as e:
             return {'logs': str(e), 'isModelReady': False}, 500
     elif algorithm=='GradSplitter':
@@ -278,8 +281,8 @@ def run_model():
                 socketio.emit('message','\n Selecting Modules, Please Wait!!!')
                 run_select_modules_script(model=model_file,dataset=dataset_file)
                 socketio.emit('message','\n Modules Selected!!!')
-            threading.Thread(target=run).start()
-            return {'logs': "Model run successfully", 'isModelReady': True}, 200
+            future = executor.submit(run)
+            return {'logs': "Model run successfully", 'isModelReady': True, 'task_id': future.id}, 200
         except Exception as e:
             return {'logs': str(e), 'isModelReady': False}, 500
         return
@@ -361,6 +364,19 @@ def run_deployment():
     result = class_name if class_num!=0 else f"Not cat"
     socketio.emit('deployment_result',f'{result}')
     return class_name
+
+@app.route('/list_tasks', methods=['GET'])
+def list_tasks():
+    tasks = {}
+    for task_id, future in executor.futures.items():
+        if future.running():
+            status = 'running'
+        elif future.done():
+            status = 'done'
+        else:
+            status = 'pending'
+        tasks[task_id] = status
+    return jsonify(tasks)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

@@ -5,7 +5,6 @@
   "main": "src/main.js",
   "scripts": {
     "serve": "vue-cli-service serve",
-    "start": "vue-cli-service serve",
     "build": "vue-cli-service build"
   },
   "dependencies": {
@@ -21,6 +20,7 @@
     "vue-socket.io": "^3.0.10"
   },
   "devDependencies": {
-    "@vue/cli-service": "~4.5.0"
+    "@vue/cli-service": "~4.5.0",
+    "sass-loader": "^13.3.2"
   }
 }

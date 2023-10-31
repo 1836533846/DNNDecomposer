@@ -1,17 +1,18 @@
 <template>
 
   <el-container>
-      <el-header style="height: 85px;">
-      <span style="margin-top: 0;margin-left: 5%;"> DNNDecomposer</span>
-      </el-header>
-      <el-main>
-          <h2 style="text-align: left;margin-left: 15%;float: left;margin-top: 2%;margin-bottom: 3%;">
+    <el-header style="height: 85px;">
+        <span style="margin-top: 0;margin-left: 5%;"> DNNDecomposer</span>
+        </el-header>
+      <el-container>
+      <el-aside style="width: 70%;border-width:0 1px 0 0;border-style: solid; border-color: #E4E7ED;">
+        <h2 style="text-align: left;margin-left: 15%;float: left;margin-top: 2%;margin-bottom: 3%;">
               Model Modularization</h2>
-          <el-button style="float:right;margin-right: 24%;margin-top: 2%;font-size: larger;width:220px;margin-bottom: 10px;" 
+          <el-button style="float:right;margin-right: 5%;margin-top: 2%;font-size: larger;width:220px;margin-bottom: 10px;" 
           type="success" @click="JumpToBenchmark">
             Benchmark</el-button>
 
-          <div class="form-body" style="margin-left: 20%;margin-right: 10%;">
+          <div class="form-body" style="margin-left: 20%;margin-right: 5%;margin-top: 100px;">
               <el-form  label-width="220px" label-position="left" 
               ref="form" :model="form" id="selectForm" :inline="true" >
                   <!-- Model Selection-->
@@ -69,6 +70,38 @@
                       </div>
                   </el-form-item>
                   
+
+                  <!-- ModelReuseMethod Grad-->
+                  <el-form-item v-if="algorithm === 'GradSplitter'" 
+                  label="Model Reuse Method:" class="selectItem" style="width: 100%;">  
+                      <div class="chooseFromCards" style="width: 600px"> 
+                        <el-row >
+                          <el-col :span="12"><div >
+                            <el-card style="width: 90%;height: 120px;" :body-style="{ padding: '0px 20px' } " 
+                            :shadow="(reuseMethod === 'More Accurate' || reuseMethod === 'For New Task'  )? 'always' : 'hover'">
+                            <p style="font-weight: bolder;margin-top: 0;margin-bottom:15px;color:#606266;">Module Composition</p>
+                            <el-radio-group v-model="reuseMethod">
+                              <el-radio label="More Accurate" size="medium" style="margin-bottom: 15px;" >More Accurate</el-radio>
+                              <el-radio label="For New Task"  size="medium" style="margin-bottom: 15px;" >For New Task</el-radio>
+                            </el-radio-group>
+
+                            </el-card>
+                          </div></el-col>
+                          <el-col :span="12"></el-col>
+                        </el-row>
+                      </div>
+                  </el-form-item>
+                  <el-form-item v-if="algorithm === 'GradSplitter' && reuseMethod==='For New Task'" label="Choose Modules:" class="selectItem">
+                    <el-select v-model="cifarclass" placeholder="Modules from CIFAR-10" style="margin-bottom: 10px;margin-right: 20px;">
+                      <el-option v-for="item in cifarclasses" :key="item.value" :label="item.label" :value="item.value"></el-option>
+                    </el-select> 
+                    <el-select v-model="svhnclass" placeholder="Modules from SVHN" >
+                      <el-option v-for="item in svhnclasses" :key="item.value" :label="item.label" :value="item.value"></el-option>
+                    </el-select>
+                    <p style="color: darkgray;margin-top: 0;line-height: 10px;">Build a binary-classification model by combination two modules. </p>
+                  </el-form-item>
+
+
                   <!-- targetSuperclassIdx(SEAM+Multi-Class Classification ONLY) -->
                   <el-form-item v-if="algorithm === 'SEAM' && directModelReuse === 'Multi-Class Classification'" 
                   label="Target Superclass Idx:" class="selectItem" style="width: 100%;"> 
@@ -120,16 +153,16 @@
               </el-form>
 
               <!-- Upload -->
-              <div style="width: 80%;margin-top: 40px;display: flex; flex-direction: row;flex-wrap: wrap;">
+              <div style="width: 100%;margin-top: 40px;display: flex; flex-direction: row;flex-wrap: wrap;">
                 <el-button style="font-size: larger;margin-bottom: 10px; width: 150px; flex:0 auto;" type="success" 
                   @click="beforeRunModularization">
                 Modularize</el-button>
                 <el-button style="font-size: larger;margin-bottom: 10px; width: 300px;flex:0 auto;" type="warning" 
                   @click="download"> 
                 Download Process Model</el-button>
-                <el-button v-if="algorithm==='SEAM'" style="justify-content:flex-end;margin-left:auto;font-size: larger;margin-bottom: 10px;flex:0 auto; width: 240px;" type="primary" @click="JumpToDeployment"> 
+                <el-button v-if="algorithm==='SEAM'" style="justify-content:flex-end;margin-left:auto;font-size: larger;margin-bottom: 10px;flex:0 auto; " type="primary" @click="JumpToDeployment"> 
                 Module Reuse </el-button>
-                <el-button v-if="algorithm==='GradSplitter'" style="justify-content:flex-end;margin-left:auto;font-size: larger;margin-bottom: 10px;flex:0 auto;width: 240px;" type="primary" @click="openReuse"> 
+                <el-button v-if="algorithm==='GradSplitter'" style="justify-content:flex-end;margin-left:auto;font-size: larger;margin-bottom: 10px;flex:0 auto;" type="primary" @click="openReuse"> 
                 Module Reuse </el-button>
               </div>
 
@@ -140,14 +173,50 @@
                   type="textarea"
                   rows="7"
                   v-model="logs"
-                  style="width: 80%;margin-top: 10px;">
+                  style="width: 100%;margin-top: 10px;">
                 </el-input>
                 
               </div>
               
               </div>
-      </el-main>
+      </el-aside>
+      
+      <el-main style="align-items: center;">
+          <el-card style="margin-bottom: 30px;width: 90%;margin-left: 2%;" shadow="never">
+            <div slot="header" class="clearfix">
+              <span><i class="el-icon-guide"></i></span>
+              <span style="font-size: large;font-weight: bold;margin-left: 10px;">Queue</span>
+            </div>
+            <div>
+              <el-card class="queuecard" shadow="hover" style=" border-radius: 15px;margin-bottom: 15px;color:#455a64 ;">
+                  <span>
 
+                    <i v-if="taskStatus === 'done'" class="el-icon-finished" style="margin-right: 10px;"></i>
+                    <i v-if="taskStatus === 'pending'" class="el-icon-loading" style="margin-right: 10px;"></i>
+                    <i v-if="taskStatus === 'running'" class="el-icon-video-play" style="margin-right: 10px;"></i>
+                  </span>
+                  <span>Status of your task: </span>
+                  <span :style="{'font-weight': 'bolder', 'color':taskStatusColor}" >{{ taskStatus }}</span>
+                </el-card>
+                <el-card class="queuecard" shadow="hover" style=" border-radius: 15px;margin-bottom: 15px;color:#455a64 ;">
+                  <span><i class="el-icon-edit-outline" style="margin-right: 10px;"></i></span>
+                  <span>There are </span>
+                  <span style="font-weight: bolder;">{{ lenQueue }} </span>
+                  <span>tasks awaiting.</span>
+                </el-card>
+            </div>
+          </el-card>
+
+
+          <el-card style="height: 300px;margin-bottom: 10px;width: 90%;margin-left: 2%;" shadow="never">
+            <div slot="header" class="clearfix">
+              <span><i class="el-icon-data-line"></i></span>
+              <span style="font-size: large;font-weight: bold;margin-left: 10px;">Tensorboard</span>
+            </div>
+            Tensorboard
+          </el-card>
+      </el-main>
+    </el-container>
 
       <el-dialog :visible.sync="REUSEdialogVisible" width="50%" >
         <!-- HEADER -->
@@ -159,7 +228,8 @@
           <el-form  label-width="180px" label-position="left" 
               ref="reuseDialogForm" :model="reuseDialogForm" id="reuseDialogForm" :inline="true" >
             <el-form-item label="Reuse Method:" class="selectItemMini">
-              <el-radio-group v-model="reuseMethod" @change="ResetModelandDataset">
+              <el-radio-group v-model="reuseMethod">
+              <!-- <el-radio-group v-model="reuseMethod" @change="ResetModelandDataset"> -->
                 <el-radio label="More Accurate">More Accurate</el-radio>
                 <el-radio label="For New Task" >For New Task</el-radio>
               </el-radio-group>
@@ -247,12 +317,12 @@ created(){
   });
   this.progressrunning = false
 },
-// beforeMount(){
-//   // this.progresspersentage = 0 //?
-// },
-// mounted(){
-//   this.timer = setInterval(this.updateProgress, 1500)
-// },
+beforeMount(){
+  // this.progresspersentage = 0 //?
+},
+mounted(){
+  this.timer = setInterval(this.updateProgress, 5000)
+},
 beforeDestroy() {
     // 在组件销毁前，移除事件监听器并关闭socket连接
     this.socket.off('connect');
@@ -263,8 +333,8 @@ beforeDestroy() {
     this.socket.off('get_progress_percentage');
     this.socket.close();
 
-    //clear timer
-    // clearInterval(this.timer)
+    // clear timer
+    clearInterval(this.timer)
   },
 
 data() {
@@ -290,6 +360,12 @@ data() {
     targetClass: '',  // The target class selected by the user
     alpha: 1,  // The alpha value entered by the user, default to 1
     targetSuperclassIdx: '',  // The target superclass index selected by the user
+    taskid: '',
+    taskQueue: {},
+    taskStatus: 'pending',
+    StatusColor: {pending:'#01579b', done:'#00c853', running:'#ffab00'},
+    taskStatusColor: '#01579b',
+    lenQueue: 0,
 
     message: '',
     modelStatus: '',
@@ -418,6 +494,7 @@ computed: {
    if((this.modelFile === 'simcnn' || this.modelFile === 'rescnn' || this.modelFile === 'incecnn') && this.datasetFile != null){
       this.algorithm ='GradSplitter'
       this.selectDisabled.SEAM = true
+      this.reuseMethod = ''
   }
   },
   // To make sure multi-class has the two model
@@ -709,12 +786,16 @@ methods: {
         // success, return results
         // this.logs = response.data.logs;
         // this.isModelReady = response.data.isModelReady;
+        this.taskid = response.data.task_id
+        console.log('got task_id =' + this.taskid)
       })
       .catch(error => {
         // return errors
         console.error(error);
         this.logs = 'An error occurred while running the model.';
       });
+
+      sessionStorage.setItem("taskid", this.taskid)
   },
   runReuse(){
     this.$message({message:'RUNNING...',  type: 'success'}, {center:true, showConfirmButton:false})
@@ -786,16 +867,43 @@ methods: {
     console.log('datasetFile:'+this.datasetFile)
 
   },
+  // updateProgress(){
+  //   const data = 'getProgressPercentage'
+  //   axios.post('http://localhost:5000/get_modularize_progress', data)
+  //     .then(response => {
+  //       let progress_rcvd_str=response.data.progress
+  //       console.log('receive progress[str]:' + progress_rcvd_str + '%')
+  //       let progress_rcvd_num = parseInt(progress_rcvd_str)
+  //       console.log('receive progress[num]:' + progress_rcvd_num + '%')
+  //       this.$set(this.progresspersentage, progress_rcvd_num)
+  //       console.log(this.progresspersentage)
+  //     })
+  //     .catch(error => {
+  //       console.error(error);
+  //     });
+  // },
   updateProgress(){
-    const data = 'getProgressPercentage'
-    axios.post('http://localhost:5000/get_modularize_progress', data)
+    axios.get('http://localhost:5000/list_tasks')
       .then(response => {
-        let progress_rcvd_str=response.data.progress
-        console.log('receive progress[str]:' + progress_rcvd_str + '%')
-        let progress_rcvd_num = parseInt(progress_rcvd_str)
-        console.log('receive progress[num]:' + progress_rcvd_num + '%')
-        this.$set(this.progresspersentage, progress_rcvd_num)
-        console.log(this.progresspersentage)
+        console.log(response.data.tasks)
+        //tasks = {}
+        //tasks[task_id] = status
+        //return jsonify(tasks)
+        let taskQueue = response.data.tasks
+        console.log(taskQueue)
+        this.taskQueue = taskQueue
+        var lenQueue = 0
+        for (var key in taskQueue) {
+          var taskStatus = taskQueue[key];
+          if(taskStatus != 'done'){
+            lenQueue = lenQueue+1
+          }
+          if(key === this.taskid){
+            this.taskStatus = taskStatus
+            this.taskStatusColor = this.taskStatusColor[taskStatus]
+          }
+        }
+        this.lenQueue = lenQueue
       })
       .catch(error => {
         console.error(error);
@@ -818,19 +926,22 @@ color: #333;
   font-family: Arial, sans-serif;
 }
 .el-header, .el-footer {
-  background-color: #b2dfdb;
-  color: #333;
+    background-color: #b2dfdb;
+    color: #333;
 
-  text-align: left;
-  font-size: x-large;
-  font-weight: bolder;
-  line-height: 90px;
+    text-align: left;
+    font-size: x-large;
+    font-weight: bolder;
+    line-height: 90px;
 }
 .el-main {
   /* background-color: #E9EEF3; */
   color: #333;
   /* line-height: 20px; */
 
+}
+.el-aside{
+  padding:20px;
 }
 .el-form-item {
   margin-right: 100px;
