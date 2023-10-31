@@ -89,9 +89,17 @@ flask run
 
 ## Data
 
-Move [Data](https://mega.nz/file/tX91ACpR#CSbQ2Xariha7_HLavE_6pKg4FoO5axOPemlv5J0JYwY) to DNNDecomposer/flask_project/GradSplitter_main/data
+Move [Data](https://mega.nz/file/tX91ACpR#CSbQ2Xariha7_HLavE_6pKg4FoO5axOPemlv5J0JYwY) to:
 
-Move [Data](https://mega.nz/folder/ADMjESyC#LkCOzE0qVHs8DOXkN3l_WA) to DNNDecomposer/flask_project/SeaM_main/data
+```bash
+DNNDecomposer/flask_project/GradSplitter_main/data
+```
+
+Move [Data](https://mega.nz/folder/ADMjESyC#LkCOzE0qVHs8DOXkN3l_WA) to:
+
+```bash
+DNNDecomposer/flask_project/SeaM_main/data
+```
 
 ## Architecture
 
