@@ -102,21 +102,23 @@ export default {
         var learningRate = sessionStorage.getItem("learningRate");
         var directModelReuse = sessionStorage.getItem("directModelReuse");
         var targetClass = sessionStorage.getItem("targetClass");
+        var targetClassLabel = sessionStorage.getItem("targetClassLabel");
         var alpha = sessionStorage.getItem("alpha");
         var targetSuperclassIdx = sessionStorage.getItem("targetSuperclassIdx");
+        var targetSuperclassLabel = sessionStorage.getItem("targetSuperclassLabel");
         this.dataTable.modelFile = modelFile
         this.dataTable.datasetFile = datasetFile
         this.dataTable.algorithm = algorithm
         this.dataTable.epoch = epoch
         this.dataTable.learningRate = learningRate
         this.dataTable.directModelReuse = directModelReuse
-        this.dataTable.targetClass = targetClass
+        this.dataTable.targetClass = targetClassLabel
         this.dataTable.alpha = alpha
-        this.dataTable.targetSuperclassIdx = targetSuperclassIdx
+        this.dataTable.targetSuperclassIdx = targetSuperclassLabel
         console.log(this.dataTable)
 
         // 初始化socket连接
-        this.socket = io('http://localhost:5000/');
+        this.socket = io('http://127.0.0.1:5000/');
 
         // 设置socket事件监听器
         this.socket.on('connect', () => {
@@ -125,7 +127,7 @@ export default {
 
         this.socket.on('deployment_result', (data) => {
             console.log('received deployment result: ' + JSON.stringify(data));
-            this.deploymentlogs += 'Module Deployment Result: ' + JSON.stringify(data) + '\n';
+            this.deploymentlogs += 'Predict Result: ' + JSON.stringify(data) + '\n';
         });
 
         this.socket.on('deployment_message', (data) => {
@@ -175,7 +177,7 @@ export default {
             const data = {
                 image: this.selectedImage
             };
-            axios.post('http://localhost:5000/run_deployment', data)
+            axios.post('http://127.0.0.1:5000/run_deployment', data)
             .catch(error => {
                 // return errors
                 console.error(error);

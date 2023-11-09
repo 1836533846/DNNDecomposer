@@ -189,7 +189,7 @@ import io from 'socket.io-client';
 export default {
     created(){
         // 初始化socket连接
-        this.socket = io('http://localhost:5000/');
+        this.socket = io('http://127.0.0.1:5000/');
 
         // 设置socket事件监听器
         this.socket.on('connect', () => {
@@ -327,7 +327,7 @@ export default {
                 epoch: '',
                 targetSuperclassIdx: '',
            };  
-           axios.post('http://localhost:5000/benchmark', data)
+           axios.post('http://127.0.0.1:5000/benchmark', data)
                 .then(response => {
                     // success, return results
                     this.seambenchmarklogs = response.data.logs;
@@ -352,7 +352,7 @@ export default {
                 targetSuperclassIdx: '',
 
            };  
-           axios.post('http://localhost:5000/benchmark', data)
+           axios.post('http://127.0.0.1:5000/benchmark', data)
                 .then(response => {
                     // success, return results
                     this.gradbenchmarklogs = response.data.logs;

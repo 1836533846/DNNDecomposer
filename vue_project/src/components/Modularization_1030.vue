@@ -216,7 +216,7 @@ import io from 'socket.io-client';
 export default {
 created(){
   // 初始化socket连接
-  this.socket = io('http://localhost:5000/');
+  this.socket = io('http://127.0.0.1:5000/');
 
   // 设置socket事件监听器
   this.socket.on('connect', () => {
@@ -707,7 +707,7 @@ methods: {
 
     this.progressrunning = true
     // Send POST requests to Flask
-    axios.post('http://localhost:5000/run_model', data)
+    axios.post('http://127.0.0.1:5000/run_model', data)
       .then(response => {
         // success, return results
         // this.logs = response.data.logs;
@@ -732,7 +732,7 @@ methods: {
     };
     console.log(data)
     // Send POST requests to Flask
-    axios.post('http://localhost:5000/run_reuse', data)
+    axios.post('http://127.0.0.1:5000/run_reuse', data)
       .then(response => {
         // success, return results
         // this.reuselogs = response.data.reuselogs;
@@ -756,7 +756,7 @@ methods: {
       alpha: (this.alpha).toString(),
       targetSuperclassIdx: this.targetSuperclassIdx,
     };
-    axios.post('http://localhost:5000/download', data, {
+    axios.post('http://127.0.0.1:5000/download', data, {
       responseType: 'blob'
     })
     .then(response => {
@@ -791,7 +791,7 @@ methods: {
   },
   updateProgress(){
     const data = 'getProgressPercentage'
-    axios.post('http://localhost:5000/get_modularize_progress', data)
+    axios.post('http://127.0.0.1:5000/get_modularize_progress', data)
       .then(response => {
         let progress_rcvd_str=response.data.progress
         console.log('receive progress[str]:' + progress_rcvd_str + '%')

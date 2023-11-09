@@ -14,7 +14,6 @@ from SeaM_main.src.defect_inherit.run_reengineering_finetune import run_reengine
 from SeaM_main.src.defect_inherit.run_eval_robustness import run_eval_robustness
 from SeaM_main.src.defect_inherit.run_standard_finetune import run_standard_finetune
 from SeaM_main.src.binary_class.SeaM_reasoning import cifar10_inference
-# cifar10_inference.predict('image/cat.jpg')
 # Golbal config for SeaM
 from SeaM_main.src.global_config import global_config as global_config_SeaM
 
@@ -33,6 +32,8 @@ import threading
 app = Flask(__name__)
 CORS(app,expose_headers=['Content-Disposition'])
 executor = Executor(app)
+# Task dictionary for tasks
+tasks = {}
 
 
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -48,6 +49,21 @@ def index():
 def handle_connect():
     print("Client connected")
     socketio.emit('message', 'Successfully connected to the server!')
+
+# def list_tasks(tasks):
+#     task_statuses = {}
+#     for task_id, future in tasks.items():
+#         print(task_id)
+#         print(future.running())
+#         print(future.done())
+#         if future.running():
+#             status = 'running'
+#         elif future.done():
+#             status = 'done'
+#         else:
+#             status = 'pending'
+#         task_statuses[task_id] = status
+#     socketio.emit('task_statuses', jsonify(task_statuses))
 
 # Given name of algorithm, find the directory of it
 def dir_convert(algorithm, direct_model_reuse, model_file, dataset_file,
@@ -96,7 +112,7 @@ def benchmark():
                 socketio.emit('seam_result', f'FLOPs Sparse: {m_total_flop_sparse:.2f}M')
                 socketio.emit('seam_result', f'FLOPs % (Sparse / Dense): {perc_sparse_dense:.2%}')
                 socketio.emit('seam_result', f'Pretrained Model ACC: {acc_pre:.2%}')
-                socketio.emit('seam_result', f'Reengineered Model ACC: {acc_reeng:.2%}')
+                socketio.emit('seam_result', f'Module ACC: {acc_reeng:.2%}')
             def run():
                 try:
                     if direct_model_reuse=='Binary Classification':
@@ -108,7 +124,6 @@ def benchmark():
                         run_calculate_flop_bc(model=model_file, dataset=dataset_file, 
                                     target_class=target_class, lr_mask=learning_rate, alpha=alpha,
                                     callback=callback)
-                        print("Run function finished.")  # Debug line    
                     else:
                         print("Model reuse type error!!")
                         return ValueError
@@ -149,7 +164,7 @@ def benchmark():
             return {'logs': str(e), 'isModelReady': False}, 500
     return jsonify({'message': 'Benchmark completed'})
 
-
+# For fixing invalid data type
 def tc_legal(target_class_str):
     if target_class_str is None or target_class_str.strip() == '':
         target_class = 0 
@@ -176,6 +191,7 @@ def run_model():
     alpha = float(data.get('alpha')) if data.get('alpha') != '' else ''
     target_class = tc_legal(target_class_str)
     target_superclass_idx = tc_legal(target_superclass_idx_str)
+    socketio.emit('get_progress_percentage', 100)
     if algorithm=='SEAM':
         try:
             def callback(**kwargs):
@@ -184,9 +200,9 @@ def run_model():
                     'm_total_flop_sparse': 'FLOPs Sparse: {:.2f}M',
                     'perc_sparse_dense': 'FLOPs % (Sparse / Dense): {:.2%}',
                     'acc_pre': 'Pretrained Model ACC: {:.2%}',
-                    'acc_reeng': 'Reengineered Model ACC: {:.2%}',
+                    'acc_reeng': 'Module ACC: {:.2%}',
                     'sum_masks':'Weights of original model:{:.2f}million',
-                    'sum_mask_ones':'Weights of reengineered module:{:.2f}million',
+                    'sum_mask_ones':'Weights of module:{:.2f}million',
                     'weight_retain_rate':"Weight retain rate:{:.2%}",
                     # For Defect Inheritance reengineering
                     'best_epoch_step1': 'Best epoch in step 1:{}',
@@ -197,8 +213,8 @@ def run_model():
                     'clean_top1' : 'Clean Top-1: {:.2f}',
                     'adv_sr': 'Attack Success Rate: {:.2f}',
                     'step_1': 'Step 1:Finetuning the output layer......',
-                    'step_2': 'Step 2:Reengineering the fine-tuned model obtained in Step 1......',
-                    'step_3': 'Step 3:Finetune according to reengineering results......',
+                    'step_2': 'Step 2:Decomposing the fine-tuned model obtained in Step 1......',
+                    'step_3': 'Step 3:Finetune according to decomposing results......',
                 }
                 for key, message in messages.items():
                     if key in kwargs:
@@ -211,9 +227,9 @@ def run_model():
             def run():
                 if direct_model_reuse=='Binary Classification':
                     socketio.emit('message','\n Decomposing Model, Please Wait!!!')
-                    run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
-                                    target_class=target_class,lr_mask=learning_rate, alpha=alpha, 
-                                    n_epochs=300,get_epochs=get_epochs)
+                    # run_model_reengineering_bc(model=model_file, dataset=dataset_file, 
+                    #                 target_class=target_class,lr_mask=learning_rate, alpha=alpha, 
+                    #                 n_epochs=300,get_epochs=get_epochs)
                     socketio.emit('message','\n Model is ready, waiting for calculating flops......')
                     run_calculate_flop_bc(model=model_file, dataset=dataset_file, 
                                 target_class=target_class, lr_mask=learning_rate, alpha=alpha,
@@ -221,9 +237,9 @@ def run_model():
                     
                 elif direct_model_reuse=='Multi-Class Classification':
                     socketio.emit('message','\n Decomposing Model, Please Wait!!!')  
-                    run_model_reengineering_mc(model=model_file, dataset=dataset_file, 
-                                target_superclass_idx=target_superclass_idx,
-                                lr_mask=learning_rate, alpha=alpha, get_epochs=get_epochs)
+                    # run_model_reengineering_mc(model=model_file, dataset=dataset_file, 
+                    #             target_superclass_idx=target_superclass_idx,
+                    #             lr_mask=learning_rate, alpha=alpha, get_epochs=get_epochs)
                     socketio.emit('message','\n Model is ready, waiting for calculating flops......')
                     run_calculate_flop_mc(model=model_file, dataset=dataset_file, 
                                 target_superclass_idx=target_superclass_idx, 
@@ -256,9 +272,10 @@ def run_model():
                 else:
                     print("Model reuse type error!!")
                     return ValueError
-            # start a new thread to run the model
             # threading.Thread(target=run).start()
             future = executor.submit(run)
+            tasks[str(id(future))] = future
+            print(tasks)
             return {'logs': "Model run successfully", 'isModelReady': True, 'task_id': future.id}, 200
         except Exception as e:
             return {'logs': str(e), 'isModelReady': False}, 500
@@ -276,12 +293,13 @@ def run_model():
                 return epoch_percentage
             def run():
                 socketio.emit('message','\n Decomposing Model, Please Wait!!!')
-                run_splitter_script(model=model_file,dataset=dataset_file,callback=callback, get_epochs=get_epochs)
+                # run_splitter_script(model=model_file,dataset=dataset_file,callback=callback, get_epochs=get_epochs)
                 socketio.emit('message','\n Decomposing Done!')
                 socketio.emit('message','\n Selecting Modules, Please Wait!!!')
                 run_select_modules_script(model=model_file,dataset=dataset_file)
                 socketio.emit('message','\n Modules Selected!!!')
             future = executor.submit(run)
+            tasks[str(id(future))] = future
             return {'logs': "Model run successfully", 'isModelReady': True, 'task_id': future.id}, 200
         except Exception as e:
             return {'logs': str(e), 'isModelReady': False}, 500
@@ -367,7 +385,7 @@ def run_deployment():
 
 @app.route('/list_tasks', methods=['GET'])
 def list_tasks():
-    tasks = {}
+    task_statuses = {}
     for task_id, future in executor.futures.items():
         if future.running():
             status = 'running'
@@ -375,8 +393,8 @@ def list_tasks():
             status = 'done'
         else:
             status = 'pending'
-        tasks[task_id] = status
-    return jsonify(tasks)
+        task_statuses[task_id] = status
+    return jsonify(task_statuses)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

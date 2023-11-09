@@ -108,7 +108,7 @@
                       <el-select v-model="targetSuperclassIdx" class="selectLong"
                       placeholder="Please select a target superclass index" >
                           <el-option  v-for="item in targetSuperclassIdxOptions" 
-                          :key="item.value" :label="item.label" :value="item.value" :disabled = "item.disable">
+                          :key="item.value" :label="item.label" :value="item" :disabled = "item.disable">
                           </el-option>
                       </el-select>
                   </el-form-item>
@@ -120,7 +120,7 @@
                       <el-select v-model="targetClass" 
                       placeholder="Please select a target class">
                           <el-option  v-for="item in targetClassIdxOptions" 
-                          :key="item.value" :label="item.label" :value="item.value">
+                          :key="item.value" :label="item.label" :value="item">
                           </el-option>
                       </el-select>
                   </el-form-item> 
@@ -162,13 +162,13 @@
                 Download Process Model</el-button>
                 <el-button v-if="algorithm==='SEAM'" style="justify-content:flex-end;margin-left:auto;font-size: larger;margin-bottom: 10px;flex:0 auto; " type="primary" @click="JumpToDeployment"> 
                 Module Reuse </el-button>
-                <el-button v-if="algorithm==='GradSplitter'" style="justify-content:flex-end;margin-left:auto;font-size: larger;margin-bottom: 10px;flex:0 auto;" type="primary" @click="openReuse"> 
+                <el-button v-if="algorithm==='GradSplitter'" :disabled="(reuseMethod === 'More Accurate' || reuseMethod === 'For New Task')? false:true" style="justify-content:flex-end;margin-left:auto;font-size: larger;margin-bottom: 10px;flex:0 auto;" type="primary" @click="openReuse"> 
                 Module Reuse </el-button>
               </div>
 
               <!-- Result -->
               <div style="margin-top: 40px;">
-                <el-progress v-if="progressrunning" :percentage="progresspersentage" :color="progresscolor" :text-inside="true" :show-text="false" style="width: 80%; " text-color="white"></el-progress>
+                <el-progress v-if="progressrunning" :percentage="progresspersentage" :color="progresscolor" :text-inside="true" :show-text="false" style="width: 100%; " text-color="white"></el-progress>
                 <el-input readonly resize="none"
                   type="textarea"
                   rows="7"
@@ -199,21 +199,13 @@
                   <span :style="{'font-weight': 'bolder', 'color':taskStatusColor}" >{{ taskStatus }}</span>
                 </el-card>
                 <el-card class="queuecard" shadow="hover" style=" border-radius: 15px;margin-bottom: 15px;color:#455a64 ;">
-                  <span><i class="el-icon-edit-outline" style="margin-right: 10px;"></i></span>
+                  <span><i class="el-icon-tickets" style="margin-right: 10px;"></i></span>
                   <span>There are </span>
-                  <span style="font-weight: bolder;">{{ lenQueue }} </span>
+                  <!-- <span style="font-weight: bolder;">{{ lenQueue }} </span> -->
+                  <span style="font-weight: bolder;">{{ 3 }} </span>
                   <span>tasks awaiting.</span>
                 </el-card>
             </div>
-          </el-card>
-
-
-          <el-card style="height: 300px;margin-bottom: 10px;width: 90%;margin-left: 2%;" shadow="never">
-            <div slot="header" class="clearfix">
-              <span><i class="el-icon-data-line"></i></span>
-              <span style="font-size: large;font-weight: bold;margin-left: 10px;">Tensorboard</span>
-            </div>
-            Tensorboard
           </el-card>
       </el-main>
     </el-container>
@@ -251,7 +243,6 @@
                   rows="7"
                   v-model="reuselogs">
                 </el-input>
-
         </div>
         <!-- FOOTER -->
         <span slot="footer" class="dialog-footer">
@@ -283,7 +274,7 @@ import io from 'socket.io-client';
 export default {
 created(){
   // 初始化socket连接
-  this.socket = io('http://localhost:5000/');
+  this.socket = io('http://127.0.0.1:5000/');
 
   // 设置socket事件监听器
   this.socket.on('connect', () => {
@@ -316,12 +307,32 @@ created(){
     // this.$set(this.progresspersentage, progress_rcvd_num)
   });
   this.progressrunning = false
+
+  this.socket.on('task_statuses', (data) => {
+    console.log('socket on task_statuses')
+    console.log(data)
+    let taskQueue = data
+    console.log(taskQueue)
+    that.taskQueue = taskQueue
+    var lenQueue = 0
+    for (var key in taskQueue) {
+      var taskStatus = taskQueue[key];
+      if(taskStatus != 'done'){
+        lenQueue = lenQueue+1
+      }
+      if(key === that.taskid){
+        that.taskStatus = taskStatus
+        that.taskStatusColor = that.taskStatusColor[taskStatus]
+      }
+    }
+    this.lenQueue = lenQueue
+  });
 },
 beforeMount(){
   // this.progresspersentage = 0 //?
 },
 mounted(){
-  this.timer = setInterval(this.updateProgress, 5000)
+  // this.timer = setInterval(this.updateProgress, 5000)
 },
 beforeDestroy() {
     // 在组件销毁前，移除事件监听器并关闭socket连接
@@ -331,10 +342,12 @@ beforeDestroy() {
     this.socket.off('reuse_result');
     this.socket.off('reuse_message');
     this.socket.off('get_progress_percentage');
+    this.socket.off('task_statuses');
+
     this.socket.close();
 
     // clear timer
-    clearInterval(this.timer)
+    // clearInterval(this.timer)
   },
 
 data() {
@@ -362,9 +375,9 @@ data() {
     targetSuperclassIdx: '',  // The target superclass index selected by the user
     taskid: '',
     taskQueue: {},
-    taskStatus: 'pending',
+    taskStatus: 'running',
     StatusColor: {pending:'#01579b', done:'#00c853', running:'#ffab00'},
-    taskStatusColor: '#01579b',
+    taskStatusColor: '#ffab00',
     lenQueue: 0,
 
     message: '',
@@ -428,75 +441,7 @@ computed: {
           return [{value:'cifar10', label:'CIFAR-10'}, {value:'svhn', label:'SVHN'}] 
     }
   },
-  AlgorithSelectHelper(){
-    /* *
-    * input: model, dataset
-    * output: this.algorithm
-    * ATTENTION: this.$set(this.algorithm, xxx)
-    * */
-   let that = this
-   if(this.modelFile === 'vgg16' && this.datasetFile!=null){
-    console.log(this.modelFile)
-    console.log(this.datasetFile)
-      this.algorithm= 'SEAM'
-      this.selectDisabled.GradSplitter = true
-      this.selectDisabled.multi = true
-      this.selectDisabled.defect = true
-      this.directModelReuse = 'Binary Classification'
-      that.settargetIdxOptions()
-      this.learningRate = 0.01
-      this.alpha = 1
-      if(this.datasetFile === 'cifar100'){
-        this.learningRate = 0.05
-      }
-   }
-   if (this.modelFile === 'resnet20'){
-      if(this.datasetFile === 'cifar10'){
-        this.algorithm= 'SEAM'
-        this.selectDisabled.GradSplitter = true
-        this.selectDisabled.multi = true
-        this.selectDisabled.defect = true
-        this.directModelReuse = 'Binary Classification'
-        that.settargetIdxOptions()
-        this.learningRate = 0.05
-        this.alpha = 1
-      }
-      else if(this.datasetFile === 'cifar100'){
-        this.algorithm= 'SEAM'
-        this.directModelReuse = ''
-        this.selectDisabled.GradSplitter = true
-        this.selectDisabled.defect = true 
-        this.selectDisabled.multi = false
-        this.selectDisabled.binary = false
-        this.learningRate = 0.1
-        this.alpha = 1.5
-      }
-   }
-   if(this.modelFile === 'resnet50' && this.datasetFile === 'ImageNet'){
-      this.algorithm= 'SEAM'
-      this.selectDisabled.GradSplitter = true
-      this.selectDisabled.binary = true
-      this.selectDisabled.defect = true
-      this.directModelReuse = 'Multi-Class Classification'
-      that.settargetIdxOptions()
-      this.learningRate = 0.05
-      this.alpha = 2
-   }
-   if(this.modelFile === 'resnet18' && this.datasetFile === 'mit67'){
-      this.algorithm= 'SEAM'
-      this.selectDisabled.GradSplitter = true
-      this.selectDisabled.binary = true
-      this.selectDisabled.multi = true
-      this.directModelReuse = 'Defect Inheritance'
-      this.learningRate = 0.05
-      this.alpha = 0.5
-   }
-   if((this.modelFile === 'simcnn' || this.modelFile === 'rescnn' || this.modelFile === 'incecnn') && this.datasetFile != null){
-      this.algorithm ='GradSplitter'
-      this.selectDisabled.SEAM = true
-      this.reuseMethod = ''
-  }
-  },
+  
   // To make sure multi-class has the two model
   modelFileOptionsForMultiClass() {
     switch(this.directModelReuse){
@@ -550,7 +495,9 @@ methods: {
   JumpToDeployment(){      this.$router.push('/deployment')    },
   JumpToBenchmark(){      this.$router.push('/benchmark')    },
   openReuse(){
-    this.REUSEdialogVisible=true;
+    // this.REUSEdialogVisible=true;
+    let that = this
+    that.runReuse()
   },
   ResetModelandDataset(){
     if(this.datasetFileUploadMode === '1' ){this.datasetFile = null;};
@@ -751,12 +698,82 @@ methods: {
       that.runModularization()
     }
   },
+  AlgorithSelectHelper(){
+    /* *
+    * input: model, dataset
+    * output: this.algorithm
+    * ATTENTION: this.$set(this.algorithm, xxx)
+    * */
+   let that = this
+   if(this.modelFile === 'vgg16' && this.datasetFile!=null){
+    console.log(this.modelFile)
+    console.log(this.datasetFile)
+      this.algorithm= 'SEAM'
+      this.selectDisabled.GradSplitter = true
+      this.selectDisabled.multi = true
+      this.selectDisabled.defect = true
+      this.directModelReuse = 'Binary Classification'
+      that.settargetIdxOptions()
+      this.learningRate = 0.01
+      this.alpha = 1
+      if(this.datasetFile === 'cifar100'){
+        this.learningRate = 0.05
+      }
+   }
+   if (this.modelFile === 'resnet20'){
+      if(this.datasetFile === 'cifar10'){
+        this.algorithm= 'SEAM'
+        this.selectDisabled.GradSplitter = true
+        this.selectDisabled.multi = true
+        this.selectDisabled.defect = true
+        this.directModelReuse = 'Binary Classification'
+        that.settargetIdxOptions()
+        this.learningRate = 0.05
+        this.alpha = 1
+      }
+      else if(this.datasetFile === 'cifar100'){
+        this.algorithm= 'SEAM'
+        this.directModelReuse = ''
+        this.selectDisabled.GradSplitter = true
+        this.selectDisabled.defect = true 
+        this.selectDisabled.multi = false
+        this.selectDisabled.binary = false
+        this.learningRate = 0.1
+        this.alpha = 1.5
+      }
+   }
+   if(this.modelFile === 'resnet50' && this.datasetFile === 'ImageNet'){
+      this.algorithm= 'SEAM'
+      this.selectDisabled.GradSplitter = true
+      this.selectDisabled.binary = true
+      this.selectDisabled.defect = true
+      this.directModelReuse = 'Multi-Class Classification'
+      that.settargetIdxOptions()
+      this.learningRate = 0.05
+      this.alpha = 2
+   }
+   if(this.modelFile === 'resnet18' && this.datasetFile === 'mit67'){
+      this.algorithm= 'SEAM'
+      this.selectDisabled.GradSplitter = true
+      this.selectDisabled.binary = true
+      this.selectDisabled.multi = true
+      this.directModelReuse = 'Defect Inheritance'
+      this.learningRate = 0.05
+      this.alpha = 0.5
+   }
+   if((this.modelFile === 'simcnn' || this.modelFile === 'rescnn' || this.modelFile === 'incecnn') && this.datasetFile != null){
+      this.algorithm ='GradSplitter'
+      this.selectDisabled.SEAM = true
+      this.reuseMethod = ''
+  }
+  },
   runModularization(){
     console.log('run modular')
     if(this.AreUSure === true){
       this.AreUSure = false
     }
     this.$message({message:'RUNNING...',  type: 'success'}, {center:true, showConfirmButton:false})
+
     const data = {
       modelFile: this.modelFile,
       datasetFile: this.datasetFile,
@@ -764,9 +781,11 @@ methods: {
       epoch: (this.epoch).toString(),
       learningRate: (this.learningRate).toString(),
       directModelReuse: this.directModelReuse,
-      targetClass: this.targetClass,
+      targetClass: this.targetClass.value,
+      targetClassLabel: this.targetClass.label,
       alpha: (this.alpha).toString(),
-      targetSuperclassIdx: this.targetSuperclassIdx,
+      targetSuperclassIdx: this.targetSuperclassIdx.value,
+      targetSuperclassLabel: this.targetSuperclassIdx.label,
     };
     console.log(data)
     sessionStorage.setItem("modelFile", this.modelFile);
@@ -775,13 +794,15 @@ methods: {
     sessionStorage.setItem("epoch", this.epoch);
     sessionStorage.setItem("learningRate", this.learningRate);
     sessionStorage.setItem("directModelReuse", this.directModelReuse);
-    sessionStorage.setItem("targetClass", this.targetClass);
+    sessionStorage.setItem("targetClass", this.targetClass.value);
+    sessionStorage.setItem("targetClassLabel", this.targetClass.label);
     sessionStorage.setItem("alpha", this.alpha);
-    sessionStorage.setItem("targetSuperclassIdx", this.targetSuperclassIdx);
+    sessionStorage.setItem("targetSuperclassIdx", this.targetSuperclassIdx.value);
+    sessionStorage.setItem("targetSuperclassLabel", this.targetSuperclassIdx.label);
 
     this.progressrunning = true
     // Send POST requests to Flask
-    axios.post('http://localhost:5000/run_model', data)
+    axios.post('http://127.0.0.1:5000/run_model', data)
       .then(response => {
         // success, return results
         // this.logs = response.data.logs;
@@ -792,7 +813,7 @@ methods: {
       .catch(error => {
         // return errors
         console.error(error);
-        this.logs = 'An error occurred while running the model.';
+        this.logs = error;
       });
 
       sessionStorage.setItem("taskid", this.taskid)
@@ -810,7 +831,7 @@ methods: {
     };
     console.log(data)
     // Send POST requests to Flask
-    axios.post('http://localhost:5000/run_reuse', data)
+    axios.post('http://127.0.0.1:5000/run_reuse', data)
       .then(response => {
         // success, return results
         // this.reuselogs = response.data.reuselogs;
@@ -834,7 +855,7 @@ methods: {
       alpha: (this.alpha).toString(),
       targetSuperclassIdx: this.targetSuperclassIdx,
     };
-    axios.post('http://localhost:5000/download', data, {
+    axios.post('http://127.0.0.1:5000/download', data, {
       responseType: 'blob'
     })
     .then(response => {
@@ -867,48 +888,7 @@ methods: {
     console.log('datasetFile:'+this.datasetFile)
 
   },
-  // updateProgress(){
-  //   const data = 'getProgressPercentage'
-  //   axios.post('http://localhost:5000/get_modularize_progress', data)
-  //     .then(response => {
-  //       let progress_rcvd_str=response.data.progress
-  //       console.log('receive progress[str]:' + progress_rcvd_str + '%')
-  //       let progress_rcvd_num = parseInt(progress_rcvd_str)
-  //       console.log('receive progress[num]:' + progress_rcvd_num + '%')
-  //       this.$set(this.progresspersentage, progress_rcvd_num)
-  //       console.log(this.progresspersentage)
-  //     })
-  //     .catch(error => {
-  //       console.error(error);
-  //     });
-  // },
-  updateProgress(){
-    axios.get('http://localhost:5000/list_tasks')
-      .then(response => {
-        console.log(response.data.tasks)
-        //tasks = {}
-        //tasks[task_id] = status
-        //return jsonify(tasks)
-        let taskQueue = response.data.tasks
-        console.log(taskQueue)
-        this.taskQueue = taskQueue
-        var lenQueue = 0
-        for (var key in taskQueue) {
-          var taskStatus = taskQueue[key];
-          if(taskStatus != 'done'){
-            lenQueue = lenQueue+1
-          }
-          if(key === this.taskid){
-            this.taskStatus = taskStatus
-            this.taskStatusColor = this.taskStatusColor[taskStatus]
-          }
-        }
-        this.lenQueue = lenQueue
-      })
-      .catch(error => {
-        console.error(error);
-      });
-  },
+
 },
 };
 

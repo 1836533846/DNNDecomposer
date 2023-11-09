@@ -122,7 +122,7 @@ import axios from 'axios';
 
 // Vue.use(new VueSocketIO({
 //   debug: true,
-//   connection: 'http://localhost:5000' // Flask URL
+//   connection: 'http://127.0.0.1:5000' // Flask URL
 // }))
 
 export default {
@@ -268,7 +268,7 @@ export default {
       };
 
       // Send POST requests to Flask
-      axios.post('http://localhost:5000/run_model', data)
+      axios.post('http://127.0.0.1:5000/run_model', data)
         .then(response => {
           // success, return results
           this.logs = response.data.logs;
@@ -284,7 +284,7 @@ export default {
       download() {
       axios({
         method: 'GET',
-        url: 'http://localhost:5000/download',  // Flask后端下载路由
+        url: 'http://127.0.0.1:5000/download',  // Flask后端下载路由
         responseType: 'blob'  // 表明返回类型是 Blob
       })
       .then(response => {

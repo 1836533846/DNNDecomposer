@@ -19,7 +19,7 @@ import 'font-awesome/css/font-awesome.min.css';
 
 Vue.use(new VueSocketIO({
   debug: true,
-  connection: 'http://localhost:5000', // the address of your Flask server
+  connection: 'http://127.0.0.1:5000', // the address of your Flask server
   // connection: 'http://192.168.3.241:5000', // the address of your Flask server
   // options: {
   //   withCredentials: true,

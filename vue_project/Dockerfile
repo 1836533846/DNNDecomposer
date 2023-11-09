@@ -1,24 +1,24 @@
-# 使用特定版本的Node.js镜像
-FROM node:16.20.2
+# 使用Node.js镜像
+FROM node:latest
 
 # 设置工作目录
 WORKDIR /app
 
-# 复制package.json和package-lock.json
+# 复制并安装前端依赖
 COPY package*.json ./
-
-# 安装项目依赖
 RUN npm install
 
 # 复制其他前端代码
 COPY . .
 
-# 构建项目（如果是一个Vue.js项目）
+# 构建前端
 RUN npm run build
 
-# 暴露你的前端服务需要的端口，例如8081
-EXPOSE 8080
-EXPOSE 8081
+# 使用Nginx来提供前端内容
+FROM nginx:latest
 
-# 设置启动命令，这取决于你是如何启动你的前端服务的
-CMD ["npm", "start"]
+# 将构建的前端复制到Nginx的默认目录中
+COPY --from=0 /app/dist /usr/share/nginx/html
+
+EXPOSE 8081
+CMD ["nginx", "-g", "daemon off;"]
