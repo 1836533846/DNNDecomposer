@@ -655,19 +655,21 @@ methods: {
         console.log(response.data)
         let taskQueue = response.data
         console.log(taskQueue)  
-        this.$set(this.taskQueue, taskQueue)
+        this.taskQueue = taskQueue
 
         //get queueNum
         const statuses = Object.values(taskQueue)
         console.log(statuses)
-
-        const count_p = statuses.filter(item => item== 'pending').length;
-        const count_r = statuses.filter(item => item== 'running').length;
-        const count_d = statuses.filter(item => item== 'done').length;
-        this.$set(this.queueNum.pending, count_p)
-        this.$set(this.queueNum.running, count_r)
-        this.$set(this.queueNum.done, count_d)
-        console.log(this.queueNum)  // queueNum:{pending:0,running: 0, done:0,},
+        var count_p=0, count_r=0, count_d=0
+        if (statuses.length>0){
+          count_p = statuses.filter(item => item== 'pending').length;
+          count_r = statuses.filter(item => item== 'running').length;
+          count_d = statuses.filter(item => item== 'done').length;
+        }
+        this.queueNum.pending = count_p
+        this.queueNum.running = count_r
+        this.queueNum.done = count_d
+        console.log(JSON.stringify(this.queueNum))  // queueNum:{pending:0,running: 0, done:0,},
         //get taskStatus 
         if(this.taskid){
           const descriptor = Object.getOwnPropertyDescriptor(taskQueue, this.taskid);

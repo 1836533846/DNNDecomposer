@@ -30,6 +30,8 @@ from GradSplitter_main.src.global_configure import global_config as global_confi
 import threading
 
 app = Flask(__name__)
+app.config['EXECUTOR_TYPE'] = 'thread'
+app.config['EXECUTOR_MAX_WORKERS'] = 5
 CORS(app,expose_headers=['Content-Disposition'])
 executor = Executor(app)
 # Task dictionary for multi-tasks
