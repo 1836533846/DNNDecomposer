@@ -1,16 +1,17 @@
 <template>
-
     <el-container>
+        <!-- Header -->
         <el-header style="height: 85px;">
         <span style="margin-top: 0;margin-left: 5%;" @click="jumptohome"> 
-            DNNDecomposer</span>
-        </el-header>
+            DNNDecomposer</span> </el-header>
+
+        <!-- Page Body-->
         <el-main>
-            
-            <h2 style="text-align: left;margin-left: 15%;margin-top: 2%;margin-bottom: 3%;">
+            <h2 style="text-align: left;margin-left: 10.5%;margin-top: 2%;margin-bottom: 3%;">
                 <i class="el-icon-arrow-left" style="margin-right: 5px;" @click="jumptohome"></i>
                 Run Benchmark</h2>
 
+            <!-- Main Body -->
             <div class="main-body" style="margin-left: 10%;margin-right: 10%;margin-top: 50px;">
                 <el-divider style="width: 80%;margin-left: 10%;"></el-divider>
                 <el-row>
@@ -20,7 +21,6 @@
                             SeaM</h3>
                         <el-button style="float:right;margin-top: 10px;margin-right: 10%;width: 200px;" type="success" 
                         @click="SEAMdialogVisible = true"> RUN Benchmark </el-button>
-
 
                         <div class="tableBody" style="width: 95%;margin-left: 5%;" >
                             <el-table :data="tableDataSEAM" stripe style="width: 100%;" :row-class-name="coloredrow"
@@ -87,23 +87,22 @@
                     width="30%">
                     <span>
                         <el-descriptions title="Benchmark Information" border size="small">
-                            <!-- Algo, model and dataset-->
+                            <!-- Algorithm, model and dataset-->
                             <el-descriptions-item label="Algortihm"  span="2">
                                 <el-tag effect="dark" :hit="true" :color="seambenchmarkdata.algorithm === 'SEAM' ?'#00bcd4':'#ffc107'"  
                                 style="font-weight: bolder;" >
                                     {{ seambenchmarkdata.algorithm }}</el-tag></el-descriptions-item>
+
                             <!-- Target Class(SEAM) -->
                             <el-descriptions-item v-if="seambenchmarkdata.algorithm === 'SEAM'" span="2"
                                 label="Model Reuse Method">{{ seambenchmarkdata.directModelReuse }}</el-descriptions-item>
 
                             <el-descriptions-item label="Model" span="2">{{seambenchmarkdata.modelFile}}</el-descriptions-item>
                             <el-descriptions-item label="Dataset" span="2">{{ seambenchmarkdata.datasetFile }}</el-descriptions-item>
-                            
                         
                             <!-- Epoch(Grad) -->
                             <el-descriptions-item v-if="seambenchmarkdata.algorithm === 'GradSplitter'" 
                                 label="Epochs">{{ seambenchmarkdata.epoch }}</el-descriptions-item>
-                            
                             
                             <el-descriptions-item v-if="seambenchmarkdata.algorithm === 'SEAM' && seambenchmarkdata.directModelReuse === 'Multi-Class Classification'"
                             span="4" label="Default Target Superclass Idx" >{{ seambenchmarkdata.targetSuperclassIdx }}</el-descriptions-item>
@@ -136,8 +135,7 @@
                     title="Run GradSplitter Benchmark"
                     :visible.sync="GRADdialogVisible"
                     width="30%">
-                    <span>
-                        <el-descriptions title="Benchmark Information" border size="small">
+                    <span> <el-descriptions title="Benchmark Information" border size="small">
                             <!-- Algo, model and dataset-->
                             <el-descriptions-item label="Algortihm"  span="6">
                                 <el-tag effect="dark" :hit="true" :color="gradbenchmarkdata.algorithm === 'SEAM' ?'#00bcd4':'#ffc107'"  
@@ -150,15 +148,13 @@
                             <!-- Epoch(Grad) -->
                             <el-descriptions-item v-if="gradbenchmarkdata.algorithm === 'GradSplitter'" 
                                 label="Epochs(Head)" span="2">{{ gradbenchmarkdata.epochs_head }}</el-descriptions-item>
-                                <el-descriptions-item v-if="gradbenchmarkdata.algorithm === 'GradSplitter'" 
+                            <el-descriptions-item v-if="gradbenchmarkdata.algorithm === 'GradSplitter'" 
                                 label="Epochs(Modularity)" span="2">{{ gradbenchmarkdata.epochs_modularity }}</el-descriptions-item>
                                                       
                             <!-- learningRate(Both) -->
                             <el-descriptions-item label="Learning rate(Head)"  span="2">{{ gradbenchmarkdata.learningRate_head }}</el-descriptions-item>
                             <el-descriptions-item label="Learning rate(Modulartiy)"  span="2">{{ gradbenchmarkdata.learningRate_modularity }}</el-descriptions-item>
-
-                        </el-descriptions>
-                    </span>
+                        </el-descriptions> </span>
                     <span> <el-input readonly resize="none"
                         type="textarea"
                         rows="7"
@@ -168,17 +164,11 @@
                     <span slot="footer" class="dialog-footer">
                         <el-button type="primary" @click="openGRADdialog">RUN</el-button>
                         <el-button type="warning" @click="GRADdialogVisible = false">Close</el-button>
-
                     </span>
                 </el-dialog>
-
             </div>
-            
-            
-
         </el-main>
     </el-container>
- 
 </template>
 
 
@@ -189,7 +179,7 @@ import io from 'socket.io-client';
 export default {
     created(){
         // 初始化socket连接
-        this.socket = io('http://127.0.0.1:5000/');
+        this.socket = io('http://localhost:5000/');
 
         // 设置socket事件监听器
         this.socket.on('connect', () => {
@@ -315,54 +305,12 @@ export default {
 
     },
     methods: {
-        openSEAMdialog(){
-            const data = {
-                modelFile: 'vgg16',
-                datasetFile: 'cifar10',
-                algorithm: 'SEAM',
-                learningRate: this.seambenchmarkdata.learningRate,
-                directModelReuse: this.seambenchmarkdata.directModelReuse,
-                targetClass: this.seambenchmarkdata.targetClass,
-                alpha: this.seambenchmarkdata.alpha,
-                epoch: '',
-                targetSuperclassIdx: '',
-           };  
-           axios.post('http://127.0.0.1:5000/benchmark', data)
-                .then(response => {
-                    // success, return results
-                    this.seambenchmarklogs = response.data.logs;
-                })
-                .catch(error => {
-                    // return errors
-                    console.error(error);
-                    this.seambenchmarklogs = 'An error occurred while deloping the benchmark.';
-            });
-           
+        //路由
+        jumptohome(){
+            this.$router.push('/modularization')
         },
-        openGRADdialog(){
-            const data = {
-                modelFile: 'simcnn',
-                datasetFile: 'cifar10',
-                algorithm: 'GradSplitter',
-                learningRate: '',
-                directModelReuse: '',
-                targetClass: '',
-                alpha: '',
-                epoch: '',
-                targetSuperclassIdx: '',
 
-           };  
-           axios.post('http://127.0.0.1:5000/benchmark', data)
-                .then(response => {
-                    // success, return results
-                    this.gradbenchmarklogs = response.data.logs;
-                })
-                .catch(error => {
-                    // return errors
-                    console.error(error);
-                    this.gradbenchmarklogs = 'An error occurred while deloping the benchmark.';
-            });
-        },
+        // 调整表格格式方法
         coloredrow({row, rowIndex}) {
             if (rowIndex === 0) {
              return 'success-row';
@@ -383,13 +331,49 @@ export default {
                 h("span", {}, column.label.split("//")[1]),
             ]);
         },
-        jumptohome(){
-            this.$router.push('/modularization')
+
+        // 弹窗中与后段沟通方法
+        openSEAMdialog(){
+            const data = {
+                modelFile: 'vgg16',
+                datasetFile: 'cifar10',
+                algorithm: 'SEAM',
+                learningRate: this.seambenchmarkdata.learningRate,
+                directModelReuse: this.seambenchmarkdata.directModelReuse,
+                targetClass: this.seambenchmarkdata.targetClass,
+                alpha: this.seambenchmarkdata.alpha,
+                epoch: '',
+                targetSuperclassIdx: '',
+           };  
+           axios.post('http://localhost:5000/benchmark', data)
+                .then(response => {})
+                .catch(error => {
+                    // return errors
+                    console.error(error);
+                    this.seambenchmarklogs = 'An error occurred while deloping the benchmark.';
+            });
         },
-
+        openGRADdialog(){
+            const data = {
+                modelFile: 'simcnn',
+                datasetFile: 'cifar10',
+                algorithm: 'GradSplitter',
+                learningRate: '',
+                directModelReuse: '',
+                targetClass: '',
+                alpha: '',
+                epoch: '',
+                targetSuperclassIdx: '',
+           };  
+           axios.post('http://localhost:5000/benchmark', data)
+                .then(response => {})
+                .catch(error => {
+                    // return errors
+                    console.error(error);
+                    this.gradbenchmarklogs = 'An error occurred while deloping the benchmark.';
+            });
+        },
     }
-
-
 }
 
 

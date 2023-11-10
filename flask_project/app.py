@@ -32,7 +32,7 @@ import threading
 app = Flask(__name__)
 CORS(app,expose_headers=['Content-Disposition'])
 executor = Executor(app)
-# Task dictionary for tasks
+# Task dictionary for multi-tasks
 tasks = {}
 
 
@@ -40,30 +40,16 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 # create a SocketIO instance
 socketio = SocketIO(app, cors_allowed_origins="*",allow_unsafe_werkzeug=True,\
                     expose_headers=['Content-Disposition'])
-
+# Welcome page
 @app.route('/')
 def index():
     return "Welcome!"
 
+# Connect socket
 @socketio.on('connect')
 def handle_connect():
     print("Client connected")
     socketio.emit('message', 'Successfully connected to the server!')
-
-# def list_tasks(tasks):
-#     task_statuses = {}
-#     for task_id, future in tasks.items():
-#         print(task_id)
-#         print(future.running())
-#         print(future.done())
-#         if future.running():
-#             status = 'running'
-#         elif future.done():
-#             status = 'done'
-#         else:
-#             status = 'pending'
-#         task_statuses[task_id] = status
-#     socketio.emit('task_statuses', jsonify(task_statuses))
 
 # Given name of algorithm, find the directory of it
 def dir_convert(algorithm, direct_model_reuse, model_file, dataset_file,
@@ -176,6 +162,7 @@ def tc_legal(target_class_str):
             target_class = 0 
     return target_class
 
+# The main running route
 @app.route('/run_model', methods=['POST'])
 def run_model():
     data = request.get_json()
@@ -194,6 +181,7 @@ def run_model():
     socketio.emit('get_progress_percentage', 100)
     if algorithm=='SEAM':
         try:
+            # Callback function for model results
             def callback(**kwargs):
                 messages = {
                     'm_total_flop_dense': 'FLOPs Dense: {:.2f}M',
@@ -386,10 +374,10 @@ def run_deployment():
 @app.route('/list_tasks', methods=['GET'])
 def list_tasks():
     task_statuses = {}
-    for task_id, future in executor.futures.items():
-        if future.running():
+    for task_id in tasks.keys():
+        if tasks[task_id].running():
             status = 'running'
-        elif future.done():
+        elif tasks[task_id].done():
             status = 'done'
         else:
             status = 'pending'

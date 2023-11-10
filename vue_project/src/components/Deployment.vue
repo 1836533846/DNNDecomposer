@@ -1,86 +1,83 @@
 <template>
-
     <el-container>
-        <el-header style="height: 85px;">
-        <span style="margin-top: 0;margin-left: 5%;"  @click="jumptohome"> DNNDecomposer</span>
-        </el-header>
+    <!-- Header -->
+        <el-header style="height: 85px;"><span style="margin-top: 0;margin-left: 5%;"  @click="jumptohome"> 
+                DNNDecomposer
+        </span></el-header>
+
         <el-main>
-            <h2 style="text-align: left;margin-left: 15%;margin-top: 2%;margin-bottom: 3%;">
+            <h2 style="text-align: left;margin-left: 10.5%;margin-top: 2%;margin-bottom: 3%;">
                 <i class="el-icon-arrow-left" style="margin-right: 5px;" @click="jumptohome"></i>
                 Module Reuse</h2>
+
+            <!-- Main body -->
             <div style="text-align: center;">
-                <div class="DatatTable" style="margin-left: 20%;margin-right: 20%;margin-top: 40px;">
-                <el-descriptions title="Model Modularization Information" border>
-                    <!-- Algo, model and dataset-->
-                    <el-descriptions-item label="Algortihm" labelStyle="width:15%" contentStyle="width:15%">
-                        <el-tag effect="dark" :hit="true" :color="dataTable.algorithm === 'SEAM' ?'#00bcd4':'#ffc107'" 
-                        style="font-weight: bolder;" >
-                            {{ dataTable.algorithm }}</el-tag></el-descriptions-item>
-                    <el-descriptions-item label="Model" labelStyle="width:13%" contentStyle="width:17%">{{dataTable.modelFile}}</el-descriptions-item>
-                    <el-descriptions-item label="Dataset" labelStyle="width:13%" contentStyle="width:17%">{{ dataTable.datasetFile }}</el-descriptions-item>
+                <!-- Data Tabel--> 
+                <div class="DatatTable" style="margin-left: 14%;margin-right: 15%;margin-top: 40px;">
+                    <el-descriptions title="Model Modularization Information" border>
+                        <!-- Algorithm, model and dataset-->
+                        <el-descriptions-item label="Algortihm" labelStyle="width:15%" contentStyle="width:15%">
+                            <el-tag effect="dark" :hit="true" :color="dataTable.algorithm === 'SEAM' ?'#00bcd4':'#ffc107'" 
+                            style="font-weight: bolder;" >
+                                {{ dataTable.algorithm }}</el-tag></el-descriptions-item>
+                        <el-descriptions-item label="Model" labelStyle="width:13%" contentStyle="width:17%">{{dataTable.modelFile}}</el-descriptions-item>
+                        <el-descriptions-item label="Dataset" labelStyle="width:13%" contentStyle="width:17%">{{ dataTable.datasetFile }}</el-descriptions-item>
                     
-                   
-                    <!-- Epoch(Grad) -->
-                    <el-descriptions-item v-if="dataTable.algorithm === 'GradSplitter'" 
-                        label="Epochs">{{ dataTable.epoch }}</el-descriptions-item>
-                    
-                    <!-- Target Class(SEAM) -->
-                    <el-descriptions-item v-if="dataTable.algorithm === 'SEAM'" span="6"
-                        label="Model Reuse Method">{{ dataTable.directModelReuse }}</el-descriptions-item>
-                    <el-descriptions-item v-if="dataTable.algorithm === 'SEAM' && dataTable.directModelReuse === 'Multi-Class Classification'"
-                        label="Target Superclass Idx">{{ dataTable.targetSuperclassIdx }}</el-descriptions-item>
-                    <el-descriptions-item v-if="dataTable.algorithm === 'SEAM' && dataTable.directModelReuse === 'Binary Classification'"
-                        label="Target Class Idx">{{ dataTable.targetClass }}</el-descriptions-item>
-                    
-                    <!-- learningRate(Both) -->
-                    <el-descriptions-item label="Learning rate">{{ dataTable.learningRate }}</el-descriptions-item>
-                    
-                    <!-- alpha(SEAM) -->
-                    <el-descriptions-item v-if="dataTable.algorithm === 'SEAM'" 
-                        label="Alpha">{{ dataTable.alpha }}</el-descriptions-item>
-                </el-descriptions>
-            </div>
-            
-            <h4 style="text-align: left;margin-left: 20%;margin-right: 20%;margin-top: 80px;">
-                Module Deployment</h4>
-            
-            <div style="margin-left: 20%;margin-right: 20%;margin-top: 20px;text-align: left;">
-                <el-row>
-                    <el-col :span="8">
-                    <div class="figfileList" >
-                        <el-card class="catdogcard" :body-style="{ padding: '10px 20px' }" 
-                        :shadow="(this.selectedImage === 'cat')? 'always' : 'hover'">
-                            <el-image :src="catURL" style="height: 80px;width:100px;float:left" fit ="cover"></el-image>
-                            <el-radio v-model="selectedImage" label="cat" >Cat </el-radio>
-                        </el-card>
+                        <!-- Epoch(Grad) -->
+                        <el-descriptions-item v-if="dataTable.algorithm === 'GradSplitter'" 
+                            label="Epochs">{{ dataTable.epoch }}</el-descriptions-item>
+                        
+                        <!-- Target Class(SEAM) -->
+                        <el-descriptions-item v-if="dataTable.algorithm === 'SEAM'" span="6"
+                            label="Model Reuse Method">{{ dataTable.directModelReuse }}</el-descriptions-item>
+                        <el-descriptions-item v-if="dataTable.algorithm === 'SEAM' && dataTable.directModelReuse === 'Multi-Class Classification'"
+                            label="Target Superclass Idx">{{ dataTable.targetSuperclassIdx }}</el-descriptions-item>
+                        <el-descriptions-item v-if="dataTable.algorithm === 'SEAM' && dataTable.directModelReuse === 'Binary Classification'"
+                            label="Target Class Idx">{{ dataTable.targetClass }}</el-descriptions-item>
+                        
+                        <!-- learningRate(Both) -->
+                        <el-descriptions-item label="Learning rate">{{ dataTable.learningRate }}</el-descriptions-item>
+                        
+                        <!-- alpha(SEAM) -->
+                        <el-descriptions-item v-if="dataTable.algorithm === 'SEAM'" 
+                            label="Alpha">{{ dataTable.alpha }}</el-descriptions-item>
+                    </el-descriptions>
+                </div>
 
-                        <el-card class="catdogcard" :body-style="{ padding: '10px 20px' }"
-                        :shadow="(this.selectedImage === 'dog')? 'always' : 'hover'">
-                            <el-image :src="dogURL" style="height: 80px;width:100px;float:left" fit ="cover"></el-image>
-                            <el-radio v-model="selectedImage" label="dog" >Dog </el-radio>
-                        </el-card>
+                <!-- Upload pic and deployment-->
+                <h4 style="text-align: left;margin-left: 14%;margin-right: 15%;margin-top: 80px;">
+                    Module Deployment</h4>
+                <div style="margin-left: 14%;margin-right: 15%;margin-top: 20px;text-align: left;">
+                    <el-row> <el-col :span="8">
+                        <div class="figfileList" >
+                            <el-card class="catdogcard" :body-style="{ padding: '10px 20px' }" 
+                            :shadow="(this.selectedImage === 'cat')? 'always' : 'hover'">
+                                <el-image :src="catURL" style="height: 80px;width:100px;float:left" fit ="cover"></el-image>
+                                <el-radio v-model="selectedImage" label="cat" >Cat </el-radio>
+                            </el-card>
 
-                        <el-button type="primary"  slot="trigger" style="margin-bottom: 10px;float: right;" disabled=true> 
-                            Browse and Upload Image </el-button>
-                        <el-button style="margin-left: 10px;margin-bottom: 10px;" type="warning" 
-                            @click="submitDelopyment">Run</el-button>
+                            <el-card class="catdogcard" :body-style="{ padding: '10px 20px' }"
+                            :shadow="(this.selectedImage === 'dog')? 'always' : 'hover'">
+                                <el-image :src="dogURL" style="height: 80px;width:100px;float:left" fit ="cover"></el-image>
+                                <el-radio v-model="selectedImage" label="dog" >Dog </el-radio>
+                            </el-card>
 
-                    </div> </el-col>
+                            <el-button type="primary"  slot="trigger" style="margin-bottom: 10px;float: right;" disabled=true> 
+                                Browse and Upload Image </el-button>
+                            <el-button style="margin-left: 10px;margin-bottom: 10px;" type="warning" 
+                                @click="submitDelopyment">Run</el-button>
+                        </div> </el-col>
 
-                    <el-col :span="16"><div style="text-align: right;">
-                        <el-input readonly resize="none"
-                            type="textarea"
-                            rows="12"
-                            v-model="deploymentlogs"
-                            style="width: 96%;margin-right: 0px;">
-                        </el-input>
-                    
-                    </div></el-col>
-                </el-row>
-            </div>
-
-
-            
+                        <el-col :span="16"><div style="text-align: right;">
+                            <el-input readonly resize="none"
+                                type="textarea"
+                                rows="12"
+                                v-model="deploymentlogs"
+                                style="width: 96%;margin-right: 0px;">
+                            </el-input>
+                        </div></el-col>
+                    </el-row>
+                </div>
             </div>
         </el-main>
     </el-container>
@@ -118,7 +115,7 @@ export default {
         console.log(this.dataTable)
 
         // 初始化socket连接
-        this.socket = io('http://127.0.0.1:5000/');
+        this.socket = io('http://localhost:5000/');
 
         // 设置socket事件监听器
         this.socket.on('connect', () => {
@@ -146,25 +143,23 @@ export default {
     data () {
         return{
             selectedImage: '', // ='cat' or 'dog'
-            // dataTable:
-            //     {algorithm:'GradSplitter', //test Data Grad
-            //     modelFile:'SimCNN', datasetFile:'CIFAR-10',learningRate:'0.01',
-            //     epoch:'100', },
-            dataTable:
-                {algorithm:'SEAM', //test Data SEAM
-                modelFile:'ResNet20', datasetFile:'CIFAR-10', learningRate:'0.01',
-                directModelReuse:'Multi-Class Classification', alpha:'1.00' ,targetSuperclassIdx:'2'},
-            // dataTable:
-            //     {algorithm:'SEAM', //test Data SEAM
-            //     modelFile:'ResNet20', datasetFile:'CIFAR-10', learningRate:'0.01',
-            //     directModelReuse:'Defect Inheritance', alpha:'1.00' },
+            dataTable: {
+                algorithm: '', // = 'GradSplitter' or 'SEAM'; The algorithm selected by the user
+                modelFile: null,  // The model file selected by the user
+                datasetFile: null,  // The dataset file selected by the user
+                learningRate: 0.01,  // The learning rate entered by the user
+                epoch: 145,  // The epoch entered by the user
+                alpha: 1,  // The alpha value entered by the user, default to 1
+                directModelReuse: '', //To save the choose of Direct model reuse
+                targetSuperclassIdx: '',  // The target superclass index selected by the user
+                targetClass: '',  // The target class selected by the user
+            },
             fileList:[],
 
             deploymentlogs: '',  // Running logs 
             imageUrl: 'https://t7.baidu.com/it/u=4162611394,4275913936&fm=193&f=GIF' ,
             catURL: catfig,
             dogURL: dogfig,
-
         }
 
     },
@@ -172,52 +167,19 @@ export default {
         jumptohome(){
             this.$router.push('/modularization')
         },
-        setParam(){},
         submitDelopyment(){
             const data = {
                 image: this.selectedImage
             };
-            axios.post('http://127.0.0.1:5000/run_deployment', data)
+            axios.post('http://localhost:5000/run_deployment', data)
             .catch(error => {
                 // return errors
                 console.error(error);
                 this.logs = 'An error occurred while running the model.';
             });
         },  
-        
-
-        // Upload single picture
-        handleRemove(file, fileList) {
-            console.log(file, fileList);
-        },
-        handlePreview(file) {
-            console.log('__file:');
-            console.log(file)
-            this.fileList.push(file)
-            console.log(this.fileList)
-        },
-        handleExceed(files, fileList) {
-            this.$message.warning(`Limit one picture only.`);
-            console.log(fileList)
-        },
-        beforeRemove(file, fileList) {
-            return this.$confirm(`Cancel the transfert of ${ file.name } ？`);
-        },
-        submitUpload(file){
-            console.log('file:'+file)
-            console.log('filelist:'+this.fileList)
-        },
-        handleChange(file, fileList){
-            console.log('handle change')
-            this.fileList = fileList
-            console.log(this.fileList)
-        },
-        
     },
-
-
 }
-
 
 
 </script>
