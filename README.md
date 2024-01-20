@@ -25,6 +25,7 @@ Several DNN modularization methods have been proposed to decompose a DNN model i
 ## Requirements
 
 **For WebUI:**
+This tool should be deployed on Linux with Nvidia GPU
 
 - node v16.20.2
 - npm v8.19.4
